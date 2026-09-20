@@ -135,7 +135,7 @@ Offline queueing of dictated notes is possible — they are just events — but 
 
 - Hirðir gains its first server, so the endpoint's exposure matters immediately. It should be stateless: text and roster context in, proposed events out, nothing stored, nothing logged beyond a request id and an outcome. No transcript, no names, in the application logs.
 - Sending first names to a model API is a different promise than "everything stays on your phone". It is defensible — first names alone, no surnames, no birthdates, no contact details — but it is the coach's call to make knowingly, and the README must say what leaves the device.
-- An alternative that keeps the promise intact is dictating with **jersey numbers instead of names** ("seven off, three on"), which needs no roster context to leave the phone at all. Worth testing, since numbers may also be faster to say than names under pressure.
+- **Decided 2026-09-20:** dictation accepts **either names or jersey numbers, interchangeably** — "seven off, three on" and "Judah off, Mia on" resolve the same way, because a coach thinks in whichever comes first under pressure. The coach accepts first names reaching the model: disjointed first names, with no surnames, birthdates, or contact details, are a proportionate exposure for the benefit. Hirðir deliberately holds the **minimum identifying data** — first name, jersey number, and (locally only, never in a workbook or a request) a birthdate used solely for lineup order. TeamSnap remains the system of record for everything else; we copy the minimum across rather than mirroring a child's file.
 
 ## Phase 2 — backend, auth, and the Google Sheet
 
@@ -152,5 +152,4 @@ Sketched, not specced; a separate design round. What the coach has already settl
 2. **Is the bench sort stable enough to tap?** Re-sorting after every event could move a row under the coach's thumb. A settle delay, or freezing the order while a sub is in progress, may be needed.
 3. **What happens to a game that is never ended?** A forgotten `game_end` leaves a clock running for days. Probably a soft prompt on next open, never an automatic edit of the record.
 4. **Does the phone's download work from the installed app?** Determines whether export needs the copy-to-clipboard fallback.
-5. **Names or numbers when dictating?** Numbers keep the roster on the phone and may be faster to say; names are what a coach actually thinks in. Test both before committing the voice pass.
-6. **Where does the app live, exactly?** A repo-level GitHub Pages path is simplest; a friendlier hostname is nicer to type on a phone. The page holds no roster either way, but a public URL that looks like a league tool invites questions worth pre-empting.
+5. **Where does the app live, exactly?** A repo-level GitHub Pages path is simplest; a friendlier hostname is nicer to type on a phone. The page holds no roster either way, but a public URL that looks like a league tool invites questions worth pre-empting.
