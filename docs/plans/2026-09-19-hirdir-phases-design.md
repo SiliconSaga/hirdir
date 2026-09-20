@@ -41,6 +41,8 @@ A generator (`hirdir build <config>`) produces one `.xlsx` per team from a JSON 
 
 ## Phase 1 — browser tracker
 
+**Specced in detail, after the first real game day, in [2026-09-20-hirdir-phase1-field-app-design.md](2026-09-20-hirdir-phase1-field-app-design.md).** The sketch below is what we thought before using the paper for real; the newer doc is the design of record.
+
 A static page (hosted alongside the MTL sites or served locally) where the coach taps a kid to sub them in or out, with a live per-kid clock and running ± fair. Goals and flags are one tap. Data stays in browser storage; export to CSV/JSON, and import a Phase 0 config.
 
 Open questions: does a phone survive a whole game in the sun; one-handed layout; how a second coach sees the same state (probably not at all in Phase 1).
