@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from openpyxl.formatting.rule import CellIsRule
+from openpyxl.formatting.rule import CellIsRule, FormulaRule
 from openpyxl.styles import Alignment, Border, Font, PatternFill, Side
 from openpyxl.worksheet.worksheet import Worksheet
 
@@ -12,6 +12,7 @@ LINK = "008000"        # values pulled from another sheet
 INPUT_TEXT = "0000FF"  # cells a human types into
 PALE_RED = "F8D0CC"
 PALE_GREEN = "C8E6C9"
+GREY = "DDDDDD"
 LIGHT = "EEF5EF"
 INPUT_FILL = "FFF8DC"
 
@@ -67,6 +68,22 @@ def print_setup(ws: Worksheet) -> None:
     for side in ("left", "right", "top", "bottom"):
         setattr(ws.page_margins, side, 0.4)
     ws.print_options.horizontalCentered = True
+
+
+def absent_rows(ws: Worksheet, rng: str, here_col: str, first_row: int, marker: str) -> None:
+    """Grey out a whole row once its Here cell says the kid is away.
+
+    The reference is written column-absolute but row-relative ($A15, not
+    $A$15), so each row tests its own Here cell rather than the first one's.
+    """
+    ws.conditional_formatting.add(
+        rng,
+        FormulaRule(
+            formula=[f'UPPER(${here_col}{first_row})="{marker}"'],
+            fill=fill(GREY),
+            stopIfTrue=False,
+        ),
+    )
 
 
 def fair_colors(ws: Worksheet, rng: str) -> None:

@@ -68,11 +68,21 @@ Then open the workbook in Excel, or upload it to Google Sheets, and print the sh
 ## What the workbook contains
 
 - **Roster** — the one place names and jersey numbers are typed. Two spare rows for late sign-ups, which appear on every game sheet automatically.
-- **Season** — minutes per kid per game, games attended, total and per-game minutes, season ± fair, goals and flag counts. All formulas; nothing to type here.
-- **One sheet per game** — a practice plan on top (with a drop-down from the Activities tab and +/~/− ratings), and below it the grid: `Here ✓`, four `In`/`Out` stopwatch-minute pairs, `Minutes played`, `± fair`, goals, ★/shy/needs-help, notes.
+- **Season** — minutes per kid per game, games attended, games missed, total and per-game minutes, season ± fair, goals and flag counts. All formulas; nothing to type here.
+- **One sheet per game** — a practice plan on top (with a drop-down from the Activities tab and +/~/− ratings), and below it the grid: `Here ✓ / A`, four `In`/`Out` stopwatch-minute pairs, `Minutes played`, `± fair`, goals, ★/shy/needs-help, notes.
 - **Activities** — a starter library of drills, with room to add your own.
 
 **During a game:** start a phone stopwatch at kickoff and pause it for the break. Write the minute when a kid goes on and when they come off. If a kid is still on at the whistle, leave the last `Out` blank and fill in *Game ended at minute*. Tick `Here` even for a kid who refuses to play, so the fair-share maths still counts them.
+
+**The `Here` column takes three states:**
+
+| Mark | Means |
+|---|---|
+| `✓` | Came. Counts toward fair share even with no minutes — a kid who refuses to go on is owed time next week. |
+| `A` | Didn't come. Greys out the row, is left out of fair share, and shows as `A` in the Season tab with a `Missed` tally. |
+| blank | Nothing was recorded. Treated like absent for the maths, but says so honestly. |
+
+If you already know a kid will miss the next game, type `A` in that game's sheet **before printing** — the row prints greyed out, so you won't call a name nobody answers to.
 
 `± fair` compares a kid's minutes against an even split — game length × players per side ÷ kids present. Red means they are owed time next week.
 

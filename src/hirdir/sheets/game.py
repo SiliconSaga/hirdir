@@ -30,6 +30,7 @@ from ..style import (
     LIGHT,
     LINK,
     RIGHT,
+    absent_rows,
     boxed_range,
     cell,
     f,
@@ -40,13 +41,15 @@ from ..style import (
 )
 
 PRACTICE_ROW = 5
+ABSENT = "A"  # written in the Here column, before or after the game
 LEGEND = (
     "In / Out = stopwatch minute. Back on again? Use the next In/Out pair. Still on at the end? "
     "Leave Out blank and fill in “Game ended at minute” — it counts to the end. Here ✓ even if a "
     "kid refuses to go in, so they still count toward fair share.",
-    "± fair = minutes vs an even split (game length × players per side ÷ kids here); red = owed "
-    "time, green = had extra. ★ = doing great, can take less attention · Shy / Needs help = give "
-    "extra attention. Type it in afterwards and the Season tab adds it up.",
+    "Here: ✓ came · A didn't come (grey row, left out of fair share — mark it ahead of time if you "
+    "already know) · blank = not recorded. ± fair = minutes vs an even split (game length × "
+    "players per side ÷ kids here); red = owed time, green = had extra. ★ = doing great, can take "
+    "less attention · Shy / Needs help = give extra attention. The Season tab adds it all up.",
 )
 
 
@@ -112,14 +115,21 @@ def _practice_section(ws, cfg: TeamConfig, cols: GameColumns, activity_ref: str)
 
 
 def _minutes_formula(cols: GameColumns, row: int) -> str:
-    """Sum of (Out − In) per stint; a blank Out means 'still on at the end'."""
+    """Sum of (Out − In) per stint; a blank Out means 'still on at the end'.
+
+    Blank unless the kid was there: no Here mark and no stamps, or an explicit
+    "A" for absent. Blank keeps them out of the fair-share divisor, so an absent
+    kid is not recorded as owed time. A kid marked absent who turns up anyway
+    still gets minutes once stamps are written.
+    """
     here = f"{L(cols.here)}{row}"
     stamps = f"{L(cols.first_stint_col)}{row}:{L(cols.last_stint_col)}{row}"
     parts = "+".join(
         f'IF({L(ci)}{row}="",0,MAX(0,IF({L(co)}{row}="",{END_MINUTE},{L(co)}{row})-{L(ci)}{row}))'
         for ci, co in cols.stints
     )
-    return f'=IF(AND({here}="",COUNT({stamps})=0),"",{parts})'
+    away = f'OR({here}="",UPPER({here})="{ABSENT}")'
+    return f'=IF(AND({away},COUNT({stamps})=0),"",{parts})'
 
 
 def build(wb, cfg: TeamConfig, index: int, game: Game, cols: GameColumns, activity_ref: str):
@@ -163,7 +173,7 @@ def build(wb, cfg: TeamConfig, index: int, game: Game, cols: GameColumns, activi
 
     head_row = grid_top + 1
     heads = {
-        cols.here: "Here\n✓",
+        cols.here: "Here\n✓ / A",
         cols.num: "#",
         cols.name: "Player",
         cols.minutes: "Minutes\nplayed",
@@ -222,6 +232,13 @@ def build(wb, cfg: TeamConfig, index: int, game: Game, cols: GameColumns, activi
     kids = f'COUNTIF({L(cols.minutes)}{first_row}:{L(cols.minutes)}{last_row},">=0")'
     _settings_row(ws, cfg, kids)
     fair_colors(ws, f"{L(cols.fair)}{first_row}:{L(cols.fair)}{last_row}")
+    absent_rows(
+        ws,
+        f"{L(cols.here)}{first_row}:{L(last)}{last_row}",
+        L(cols.here),
+        first_row,
+        ABSENT,
+    )
 
     row = last_row + 2
     for line in LEGEND:

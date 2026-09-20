@@ -71,6 +71,8 @@ def played(cfg, workbook_file):
     # Cleo: 5-12 = 7 minutes
     col(g1, first + 3, cols.stints[0][0], 5)
     col(g1, first + 3, cols.stints[0][1], 12)
+    # Hugo: known in advance not to be coming
+    col(g1, first + 4, cols.here, "A")
     # Game 2: Dev turned up, nothing recorded yet
     col(g2, first, cols.here, "✓")
     wb.save(workbook_file)
@@ -98,12 +100,13 @@ def test_minutes_and_fair_share(cfg, played):
     assert at(1, cols.minutes) == 0           # came but refused
     assert at(2, cols.minutes) == 20
     assert at(3, cols.minutes) == 7
-    assert at(4, cols.minutes) == ""          # didn't come: stays blank
+    assert at(4, cols.minutes) == ""          # marked absent: stays blank
+    assert at(5, cols.minutes) == ""          # nothing recorded: stays blank
     # 30 minutes × 4 per side ÷ 4 kids present
     assert values[(game, "L3")] == 30
     assert at(0, cols.fair) == -7
     assert at(1, cols.fair) == -30
-    assert at(4, cols.fair) == ""
+    assert at(4, cols.fair) == ""             # absent kids aren't owed time
 
 
 def test_season_rolls_up_minutes_goals_and_flags(cfg, played):
@@ -116,12 +119,27 @@ def test_season_rolls_up_minutes_goals_and_flags(cfg, played):
     assert values[(season, f"C{row}")] == 23          # game 1 minutes
     assert values[(season, f"D{row}")] == 0           # game 2: here, no minutes yet
     totals = 3 + len(cfg.games)
-    assert values[(season, f"{_letter(totals)}{row}")] == 2        # games
-    assert values[(season, f"{_letter(totals + 1)}{row}")] == 23   # minutes
-    assert values[(season, f"{_letter(totals + 2)}{row}")] == 11.5  # per game
-    assert values[(season, f"{_letter(totals + 3)}{row}")] == -7   # ± fair
-    assert values[(season, f"{_letter(totals + 4)}{row}")] == 1    # goals
-    assert values[(season, f"{_letter(totals + 6)}{row}")] == 1    # shy
+    assert values[(season, f"{_letter(totals)}{row}")] == 2         # games
+    assert values[(season, f"{_letter(totals + 1)}{row}")] == 0     # missed
+    assert values[(season, f"{_letter(totals + 2)}{row}")] == 23    # minutes
+    assert values[(season, f"{_letter(totals + 3)}{row}")] == 11.5  # per game
+    assert values[(season, f"{_letter(totals + 4)}{row}")] == -7    # ± fair
+    assert values[(season, f"{_letter(totals + 5)}{row}")] == 1     # goals
+    assert values[(season, f"{_letter(totals + 7)}{row}")] == 1     # shy
+
+
+def test_an_absent_kid_shows_as_A_and_counts_as_missed(cfg, played):
+    path, _cols, _first = played
+    values = evaluate(path)
+    season = "SEASON"
+    row = FIRST_PLAYER_ROW + 4  # Hugo, marked A for game 1
+    assert values[(season, f"B{row}")] == "Hugo"
+    assert values[(season, f"C{row}")] == "A"
+    totals = 3 + len(cfg.games)
+    assert values[(season, f"{_letter(totals)}{row}")] == 0      # not counted as a game played
+    assert values[(season, f"{_letter(totals + 1)}{row}")] == 1  # missed one
+    # fair share is still 30: four kids were there, Hugo wasn't
+    assert values[(cfg.sheet_names[0].upper(), "L3")] == 30
     footer = FIRST_PLAYER_ROW + player_rows(cfg)
     assert values[(season, f"C{footer}")] == 4                     # kids at game 1
 

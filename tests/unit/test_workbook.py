@@ -97,6 +97,23 @@ def test_practice_rows_offer_the_activities_list(cfg, workbook_file):
     assert all(ref.startswith("B") for ref in covered)
 
 
+def test_absent_rows_grey_out_per_row_not_all_at_once(cfg, workbook_file):
+    """The rule must be row-relative, or one kid marked A greys the whole team."""
+    cols = game_columns(cfg)
+    ws = load_workbook(workbook_file)[cfg.sheet_names[0]]
+    first = _first_player_row(ws, cols)
+    rules = [
+        (rng, rule)
+        for rng in ws.conditional_formatting
+        for rule in rng.rules
+        if rule.type == "expression"
+    ]
+    assert len(rules) == 1
+    rng, rule = rules[0]
+    assert rule.formula == [f'UPPER($A{first})="A"']  # $A15, never $A$15
+    assert str(rng.sqref) == f"A{first}:{_letter(cols.last)}{first + len(cfg.players) + 1}"
+
+
 def test_written_file_lands_where_asked(cfg, tmp_path):
     out = workbook.write(cfg, tmp_path / "nested" / "book.xlsx")
     assert out.exists()
@@ -110,6 +127,12 @@ def test_games_without_a_field_still_build(example_data, tmp_path):
     ws = load_workbook(workbook.write(cfg, tmp_path / "b.xlsx"))[cfg.sheet_names[0]]
     assert "Field" not in ws["A1"].value
     assert cfg.games[0].date == date(2026, 9, 20)
+
+
+def _letter(index: int) -> str:
+    from openpyxl.utils import get_column_letter
+
+    return get_column_letter(index)
 
 
 def _first_player_row(ws, cols) -> int:

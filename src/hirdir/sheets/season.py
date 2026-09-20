@@ -11,9 +11,11 @@ from openpyxl.utils import get_column_letter as L
 from ..config import TeamConfig
 from ..layout import FIRST_PLAYER_ROW, GameColumns, player_rows
 from ..style import BOX, CENTER, GREEN, LEFT, LINK, RIGHT, cell, f, fair_colors, print_setup
+from .game import ABSENT
 
 TOTAL_HEADERS = [
     "Games",
+    "Missed",
     "Minutes",
     "Min /\ngame",
     "± fair\n(season)",
@@ -79,10 +81,13 @@ def build(wb, cfg: TeamConfig, cols: GameColumns, first_game_row: int):
         for g in range(n_games):
             minutes = game_ref(g, cols.minutes, grow)
             here = game_ref(g, cols.here, grow)
+            # minutes if we have them, else ✓ for came, A for away, blank for
+            # "nobody wrote anything down"
             c = cell(
                 ws,
                 f"{L(first_game_col + g)}{row}",
-                f'=IF(LEN({minutes})>0,{minutes},IF(LEN({here})>0,"✓",""))',
+                f"=IF(LEN({minutes})>0,{minutes},"
+                f'IF(UPPER({here})="{ABSENT}","{ABSENT}",IF(LEN({here})>0,"✓","")))',
                 f(11),
                 CENTER,
                 BOX,
@@ -90,33 +95,37 @@ def build(wb, cfg: TeamConfig, cols: GameColumns, first_game_row: int):
             c.number_format = "0"
 
         span = f"{L(first_game_col)}{row}:{L(last_game_col)}{row}"
-        col = totals_col
-        cell(ws, f"{L(col)}{row}", f'=COUNT({span})+COUNTIF({span},"✓")', f(11, True), CENTER, BOX)
+        games_col = L(totals_col)       # Games
+        minutes_col = L(totals_col + 2)  # Minutes — Missed sits between them
+        played = f'=COUNT({span})+COUNTIF({span},"✓")'
+        cell(ws, f"{games_col}{row}", played, f(11, True), CENTER, BOX)
         mins = ",".join(game_ref(g, cols.minutes, grow) for g in range(n_games))
-        cell(ws, f"{L(col + 1)}{row}", f"=SUM({mins})", f(11), CENTER, BOX).number_format = "0"
-        avg = cell(
-            ws,
-            f"{L(col + 2)}{row}",
-            f'=IF({L(col)}{row}=0,"",{L(col + 1)}{row}/{L(col)}{row})',
-            f(11),
-            CENTER,
-            BOX,
-        )
-        avg.number_format = "0.0"
         fair = ",".join(game_ref(g, cols.fair, grow) for g in range(n_games))
-        cell(ws, f"{L(col + 3)}{row}", f"=SUM({fair})", f(11, True), CENTER, BOX).number_format = (
-            "+0;-0;0"
-        )
         goals = ",".join(game_ref(g, cols.goals, grow) for g in range(n_games))
-        cell(ws, f"{L(col + 4)}{row}", f"=SUM({goals})", f(11), CENTER, BOX)
-        for j, key in enumerate(("star", "shy", "help")):
+        totals = [
+            (f'=COUNTIF({span},"{ABSENT}")', f(11), None),              # Missed
+            (f"=SUM({mins})", f(11), "0"),                              # Minutes
+            (
+                f'=IF({games_col}{row}=0,"",{minutes_col}{row}/{games_col}{row})',
+                f(11),
+                "0.0",
+            ),                                                          # Min / game
+            (f"=SUM({fair})", f(11, True), "+0;-0;0"),                   # ± fair
+            (f"=SUM({goals})", f(11), None),                             # Goals
+        ]
+        for j, (formula, font, number_format) in enumerate(totals, start=1):
+            c = cell(ws, f"{L(totals_col + j)}{row}", formula, font, CENTER, BOX)
+            if number_format:
+                c.number_format = number_format
+        for j, key in enumerate(("star", "shy", "help"), start=len(totals) + 1):
             flag = getattr(cols, key)
             parts = "+".join(f"(LEN({game_ref(g, flag, grow)})>0)" for g in range(n_games))
-            cell(ws, f"{L(col + 5 + j)}{row}", f"={parts}", f(11), CENTER, BOX)
+            cell(ws, f"{L(totals_col + j)}{row}", f"={parts}", f(11), CENTER, BOX)
         ws.row_dimensions[row].height = 22
 
     last_row = FIRST_PLAYER_ROW + rows - 1
-    fair_colors(ws, f"{L(totals_col + 3)}{FIRST_PLAYER_ROW}:{L(totals_col + 3)}{last_row}")
+    fair_col = L(totals_col + 4)
+    fair_colors(ws, f"{fair_col}{FIRST_PLAYER_ROW}:{fair_col}{last_row}")
 
     footer = last_row + 1
     cell(ws, f"B{footer}", "Kids at game", f(9, True), RIGHT)
