@@ -72,7 +72,7 @@ def _sheet_names(games: list[Game]) -> list[str]:
     for i, game in enumerate(games, 1):
         name = f"G{i} {game.sheet_name}"[:MAX_SHEET_NAME].strip()
         while name in names:  # pragma: no cover - only two teams could collide
-            name = f"{name[:MAX_SHEET_NAME - 2]} {i}"
+            name = f"{name[: MAX_SHEET_NAME - 2]} {i}"
         names.append(name)
     return names
 

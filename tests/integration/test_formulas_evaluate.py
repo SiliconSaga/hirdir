@@ -12,7 +12,8 @@ import pytest
 from openpyxl import load_workbook
 
 from hirdir.bake import bake
-from hirdir.layout import FIRST_PLAYER_ROW, game_columns, player_rows
+from hirdir.layout import FIRST_PLAYER_ROW, game_columns, player_rows, settings_cells
+from hirdir.sheets.game import SETTINGS_LABELS, _column_widths
 
 formulas = pytest.importorskip("formulas")
 
@@ -20,6 +21,17 @@ CELL_KEY = re.compile(r"'\[[^\]]+\](.+)'!([A-Z]+\d+)$")
 # Excel error values, as opposed to a cell whose text merely starts with "#"
 # (the jersey-number column header is a literal "#").
 EXCEL_ERRORS = {"#REF!", "#VALUE!", "#NAME?", "#DIV/0!", "#N/A", "#NULL!", "#NUM!"}
+
+
+def fair_share_cell(cfg) -> str:
+    """Where "Fair share per kid" lands — it moves with the column widths."""
+    fields = settings_cells(_column_widths(game_columns(cfg)), SETTINGS_LABELS)
+    return fields[2].value_ref.replace("$", "")
+
+
+def end_minute_cell(cfg) -> str:
+    fields = settings_cells(_column_widths(game_columns(cfg)), SETTINGS_LABELS)
+    return fields[0].value_ref.replace("$", "")
 
 
 def first_grid_row(ws, cols) -> int:
@@ -52,8 +64,8 @@ def played(cfg, workbook_file):
     def col(ws, row, column, value):
         ws.cell(row=row, column=column).value = value
 
-    wb["Roster"]["A5"] = 1                      # Dev (youngest) gets jersey 1
-    g1["D3"] = 30                               # game ended at minute 30, 4 per side
+    wb["Roster"]["A5"] = 1  # Dev (youngest) gets jersey 1
+    g1[end_minute_cell(cfg)] = 30  # game ended at minute 30, 4 per side
     # Dev: on 0-8, back on at 15 and still on at the whistle = 23 minutes
     col(g1, first, cols.here, "x")
     col(g1, first, cols.stints[0][0], 0)
@@ -96,17 +108,17 @@ def test_minutes_and_fair_share(cfg, played):
     def at(row_offset, column):
         return values[(game, f"{_letter(column)}{first + row_offset}")]
 
-    assert at(0, cols.minutes) == 23          # still on at the whistle
-    assert at(1, cols.minutes) == 0           # came but refused
+    assert at(0, cols.minutes) == 23  # still on at the whistle
+    assert at(1, cols.minutes) == 0  # came but refused
     assert at(2, cols.minutes) == 20
     assert at(3, cols.minutes) == 7
-    assert at(4, cols.minutes) == ""          # marked absent: stays blank
-    assert at(5, cols.minutes) == ""          # nothing recorded: stays blank
+    assert at(4, cols.minutes) == ""  # marked absent: stays blank
+    assert at(5, cols.minutes) == ""  # nothing recorded: stays blank
     # 30 minutes × 4 per side ÷ 4 kids present
-    assert values[(game, "L3")] == 30
+    assert values[(game, fair_share_cell(cfg))] == 30
     assert at(0, cols.fair) == -7
     assert at(1, cols.fair) == -30
-    assert at(4, cols.fair) == ""             # absent kids aren't owed time
+    assert at(4, cols.fair) == ""  # absent kids aren't owed time
 
 
 def test_season_rolls_up_minutes_goals_and_flags(cfg, played):
@@ -114,18 +126,18 @@ def test_season_rolls_up_minutes_goals_and_flags(cfg, played):
     values = evaluate(path)
     season = "SEASON"
     row = FIRST_PLAYER_ROW  # Dev
-    assert values[(season, f"A{row}")] == 1           # jersey pulled from the roster
+    assert values[(season, f"A{row}")] == 1  # jersey pulled from the roster
     assert values[(season, f"B{row}")] == "Dev"
-    assert values[(season, f"C{row}")] == 23          # game 1 minutes
-    assert values[(season, f"D{row}")] == 0           # game 2: here, no minutes yet
+    assert values[(season, f"C{row}")] == 23  # game 1 minutes
+    assert values[(season, f"D{row}")] == 0  # game 2: here, no minutes yet
     totals = 3 + len(cfg.games)
-    assert values[(season, f"{_letter(totals)}{row}")] == 2         # games
-    assert values[(season, f"{_letter(totals + 1)}{row}")] == 0     # missed
-    assert values[(season, f"{_letter(totals + 2)}{row}")] == 23    # minutes
+    assert values[(season, f"{_letter(totals)}{row}")] == 2  # games
+    assert values[(season, f"{_letter(totals + 1)}{row}")] == 0  # missed
+    assert values[(season, f"{_letter(totals + 2)}{row}")] == 23  # minutes
     assert values[(season, f"{_letter(totals + 3)}{row}")] == 11.5  # per game
-    assert values[(season, f"{_letter(totals + 4)}{row}")] == -7    # ± fair
-    assert values[(season, f"{_letter(totals + 5)}{row}")] == 1     # goals
-    assert values[(season, f"{_letter(totals + 7)}{row}")] == 1     # shy
+    assert values[(season, f"{_letter(totals + 4)}{row}")] == -7  # ± fair
+    assert values[(season, f"{_letter(totals + 5)}{row}")] == 1  # goals
+    assert values[(season, f"{_letter(totals + 7)}{row}")] == 1  # shy
 
 
 def test_an_absent_kid_shows_as_A_and_counts_as_missed(cfg, played):
@@ -136,24 +148,23 @@ def test_an_absent_kid_shows_as_A_and_counts_as_missed(cfg, played):
     assert values[(season, f"B{row}")] == "Hugo"
     assert values[(season, f"C{row}")] == "A"
     totals = 3 + len(cfg.games)
-    assert values[(season, f"{_letter(totals)}{row}")] == 0      # not counted as a game played
+    assert values[(season, f"{_letter(totals)}{row}")] == 0  # not counted as a game played
     assert values[(season, f"{_letter(totals + 1)}{row}")] == 1  # missed one
     # fair share is still 30: four kids were there, Hugo wasn't
-    assert values[(cfg.sheet_names[0].upper(), "L3")] == 30
+    assert values[(cfg.sheet_names[0].upper(), fair_share_cell(cfg))] == 30
     footer = FIRST_PLAYER_ROW + player_rows(cfg)
-    assert values[(season, f"C{footer}")] == 4                     # kids at game 1
+    assert values[(season, f"C{footer}")] == 4  # kids at game 1
 
 
-def test_bake_writes_values_that_a_non_calculating_viewer_can_read(played):
+def test_bake_writes_values_that_a_non_calculating_viewer_can_read(cfg, played):
     path, cols, first = played
     written = bake(path)
     assert written > 0
-    wb = load_workbook(path, data_only=True)
-    ws = wb[wb.sheetnames[2]]
-    assert ws.cell(row=first, column=cols.minutes).value == 23
-    assert load_workbook(path)[wb.sheetnames[2]].cell(
-        row=first, column=cols.minutes
-    ).value.startswith("=")
+    sheet = cfg.sheet_names[0]
+    cached = load_workbook(path, data_only=True)[sheet]
+    assert cached.cell(row=first, column=cols.minutes).value == 23
+    live = load_workbook(path)[sheet]
+    assert live.cell(row=first, column=cols.minutes).value.startswith("=")
 
 
 def _letter(index: int) -> str:

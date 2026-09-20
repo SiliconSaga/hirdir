@@ -1,4 +1,4 @@
-"""Assemble a team's season workbook: Roster, Season, a sheet per game, Activities."""
+"""Assemble a team's season workbook: Roster, Season, Activities, a sheet per game."""
 
 from __future__ import annotations
 
@@ -20,7 +20,9 @@ def build(cfg: TeamConfig) -> Workbook:
     for index, match in enumerate(cfg.games):
         first_game_row = game.build(wb, cfg, index, match, cols, activity_ref)
     season.build(wb, cfg, cols, first_game_row)
-    wb.move_sheet("Activities", offset=len(wb.sheetnames))
+    # Roster, Season, Activities, then the games — the library stays reachable
+    # instead of hiding behind a season's worth of game sheets.
+    wb.move_sheet("Activities", offset=2 - wb.index(wb["Activities"]))
     wb.calculation.fullCalcOnLoad = True
     return wb
 

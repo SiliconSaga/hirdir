@@ -12,13 +12,12 @@ from openpyxl.worksheet.datavalidation import DataValidation
 
 from ..config import Game, TeamConfig
 from ..layout import (
-    END_MINUTE,
-    FAIR_SHARE,
     FIRST_PLAYER_ROW,
-    PLAYERS_PER_SIDE,
     SETTINGS_ROW,
     GameColumns,
+    SettingsField,
     player_rows,
+    settings_cells,
 )
 from ..style import (
     BOX,
@@ -42,6 +41,7 @@ from ..style import (
 
 PRACTICE_ROW = 5
 ABSENT = "A"  # written in the Here column, before or after the game
+SETTINGS_LABELS = ["Game ended at minute:", "Players per side:", "Fair share per kid:"]
 LEGEND = (
     "In / Out = stopwatch minute. Back on again? Use the next In/Out pair. Still on at the end? "
     "Leave Out blank and fill in “Game ended at minute” — it counts to the end. Here ✓ even if a "
@@ -53,29 +53,32 @@ LEGEND = (
 )
 
 
-def _settings_row(ws, cfg: TeamConfig, kids_count: str) -> None:
+def _settings_row(ws, cfg: TeamConfig, fields: list[SettingsField], kids_count: str) -> None:
     r = SETTINGS_ROW
     ws.row_dimensions[r].height = 24
-    cell(ws, f"A{r}", "Game ended at minute:", f(10, True), RIGHT)
-    merge(ws, 1, r, 3, r)
-    cell(ws, f"D{r}", None, f(13, True, INPUT_TEXT), CENTER, BOX, INPUT_FILL)
-    cell(ws, f"E{r}", "Players per side:", f(10, True), RIGHT)
-    merge(ws, 5, r, 7, r)
-    cell(ws, f"H{r}", cfg.on_field, f(13, True, INPUT_TEXT), CENTER, BOX, INPUT_FILL)
-    cell(ws, f"I{r}", "Fair share per kid:", f(10, True), RIGHT)
-    merge(ws, 9, r, 11, r)
-    share = cell(
-        ws,
-        f"L{r}",
-        f'=IF(OR({END_MINUTE}="",{kids_count}=0),"",'
-        f"ROUND({END_MINUTE}*{PLAYERS_PER_SIDE}/{kids_count},1))",
-        f(13, True),
-        CENTER,
-        BOX,
-    )
-    share.number_format = '0.0" min"'
-    boxed_range(ws, 12, 13, r)
-    merge(ws, 12, r, 13, r)
+    end, side, share = fields
+    values = [
+        (end, None, f(13, True, INPUT_TEXT), INPUT_FILL, None),
+        (side, cfg.on_field, f(13, True, INPUT_TEXT), INPUT_FILL, None),
+        (
+            share,
+            f'=IF(OR({end.value_ref}="",{kids_count}=0),"",'
+            f"ROUND({end.value_ref}*{side.value_ref}/{kids_count},1))",
+            f(13, True),
+            None,
+            '0.0" min"',
+        ),
+    ]
+    for field, value, font, bg, number_format in values:
+        c1, c2 = field.label_span
+        cell(ws, f"{L(c1)}{r}", field.label, f(10, True), RIGHT)
+        merge(ws, c1, r, c2, r)
+        v1, v2 = field.value_span
+        c = cell(ws, f"{L(v1)}{r}", value, font, CENTER, BOX, bg)
+        boxed_range(ws, v1, v2, r, bg)
+        merge(ws, v1, r, v2, r)
+        if number_format:
+            c.number_format = number_format
 
 
 def _practice_section(ws, cfg: TeamConfig, cols: GameColumns, activity_ref: str) -> int:
@@ -114,7 +117,25 @@ def _practice_section(ws, cfg: TeamConfig, cols: GameColumns, activity_ref: str)
     return r
 
 
-def _minutes_formula(cols: GameColumns, row: int) -> str:
+def _column_widths(cols: GameColumns) -> dict[int, float]:
+    widths = {
+        cols.here: 6,
+        cols.num: 5,
+        cols.name: 16,
+        cols.minutes: 8,
+        cols.fair: 6,
+        cols.goals: 9,
+        cols.star: 5,
+        cols.shy: 5,
+        cols.help: 7.5,  # enough that "Needs help" doesn't break mid-word
+        cols.notes: 30,
+    }
+    for ci, co in cols.stints:
+        widths[ci] = widths[co] = 5.5
+    return widths
+
+
+def _minutes_formula(cols: GameColumns, row: int, end_ref: str) -> str:
     """Sum of (Out − In) per stint; a blank Out means 'still on at the end'.
 
     Blank unless the kid was there: no Here mark and no stamps, or an explicit
@@ -125,7 +146,7 @@ def _minutes_formula(cols: GameColumns, row: int) -> str:
     here = f"{L(cols.here)}{row}"
     stamps = f"{L(cols.first_stint_col)}{row}:{L(cols.last_stint_col)}{row}"
     parts = "+".join(
-        f'IF({L(ci)}{row}="",0,MAX(0,IF({L(co)}{row}="",{END_MINUTE},{L(co)}{row})-{L(ci)}{row}))'
+        f'IF({L(ci)}{row}="",0,MAX(0,IF({L(co)}{row}="",{end_ref},{L(co)}{row})-{L(ci)}{row}))'
         for ci, co in cols.stints
     )
     away = f'OR({here}="",UPPER({here})="{ABSENT}")'
@@ -157,8 +178,10 @@ def build(wb, cfg: TeamConfig, index: int, game: Game, cols: GameColumns, activi
     )
     merge(ws, 1, 2, last, 2)
 
+    widths = _column_widths(cols)
+    end, side, share = settings_cells(widths, SETTINGS_LABELS)
+
     rows = player_rows(cfg)
-    first_row = 0  # filled in below, once the practice section knows its height
     grid_top = _practice_section(ws, cfg, cols, activity_ref) + 2
     cell(
         ws,
@@ -214,13 +237,13 @@ def build(wb, cfg: TeamConfig, index: int, game: Game, cols: GameColumns, activi
         name.alignment = LEFT
 
         minutes = ws.cell(row=row, column=cols.minutes)
-        minutes.value = _minutes_formula(cols, row)
+        minutes.value = _minutes_formula(cols, row, end.value_ref)
         minutes.font = f(13, True)
         minutes.number_format = "0"
         fair = ws.cell(row=row, column=cols.fair)
         fair.value = (
-            f'=IF(OR({L(cols.minutes)}{row}="",{FAIR_SHARE}=""),"",'
-            f"ROUND({L(cols.minutes)}{row}-{FAIR_SHARE},0))"
+            f'=IF(OR({L(cols.minutes)}{row}="",{share.value_ref}=""),"",'
+            f"ROUND({L(cols.minutes)}{row}-{share.value_ref},0))"
         )
         fair.number_format = "+0;-0;0"
         fair.font = f(11)
@@ -230,7 +253,7 @@ def build(wb, cfg: TeamConfig, index: int, game: Game, cols: GameColumns, activi
     last_row = first_row + rows - 1
 
     kids = f'COUNTIF({L(cols.minutes)}{first_row}:{L(cols.minutes)}{last_row},">=0")'
-    _settings_row(ws, cfg, kids)
+    _settings_row(ws, cfg, [end, side, share], kids)
     fair_colors(ws, f"{L(cols.fair)}{first_row}:{L(cols.fair)}{last_row}")
     absent_rows(
         ws,
@@ -247,20 +270,6 @@ def build(wb, cfg: TeamConfig, index: int, game: Game, cols: GameColumns, activi
         ws.row_dimensions[row].height = 26
         row += 1
 
-    widths = {
-        cols.here: 6,
-        cols.num: 5,
-        cols.name: 16,
-        cols.minutes: 8,
-        cols.fair: 6,
-        cols.goals: 9,
-        cols.star: 5,
-        cols.shy: 5,
-        cols.help: 6,
-        cols.notes: 30,
-    }
-    for ci, co in cols.stints:
-        widths[ci] = widths[co] = 5.5
     for col, width in widths.items():
         ws.column_dimensions[L(col)].width = width
     print_setup(ws)

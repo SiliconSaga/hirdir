@@ -63,14 +63,15 @@ Then open the workbook in Excel, or upload it to Google Sheets, and print the sh
 | `on_field` | Players per side; fills in the fair-share calculation, and can be changed per game in the sheet |
 | `stints` | How many In/Out pairs each kid's row gets |
 | `practice_rows` | Blank activity lines in each game sheet's practice section |
+| `practice_title` | Heading for that section — e.g. `"WARM-UP — before kickoff"` for age groups whose session is all game |
 | `players[].dob` | Optional. Orders the lineup youngest first; players without one keep their listed order, last |
 
 ## What the workbook contains
 
 - **Roster** — the one place names and jersey numbers are typed. Two spare rows for late sign-ups, which appear on every game sheet automatically.
 - **Season** — minutes per kid per game, games attended, games missed, total and per-game minutes, season ± fair, goals and flag counts. All formulas; nothing to type here.
-- **One sheet per game** — a practice plan on top (with a drop-down from the Activities tab and +/~/− ratings), and below it the grid: `Here ✓ / A`, four `In`/`Out` stopwatch-minute pairs, `Minutes played`, `± fair`, goals, ★/shy/needs-help, notes.
-- **Activities** — a starter library of drills, with room to add your own.
+- **Activities** — a starter library of drills, with room to add your own. It sits third, ahead of the game sheets, so it doesn't get lost behind a season of tabs.
+- **One sheet per game** — a practice or warm-up plan on top (with a drop-down from the Activities tab and +/~/− ratings), and below it the grid: `Here ✓ / A`, the `In`/`Out` stopwatch-minute pairs, `Minutes played`, `± fair`, goals, ★/shy/needs-help, notes.
 
 **During a game:** start a phone stopwatch at kickoff and pause it for the break. Write the minute when a kid goes on and when they come off. If a kid is still on at the whistle, leave the last `Out` blank and fill in *Game ended at minute*. Tick `Here` even for a kid who refuses to play, so the fair-share maths still counts them.
 

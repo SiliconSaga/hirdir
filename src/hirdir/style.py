@@ -7,8 +7,8 @@ from openpyxl.styles import Alignment, Border, Font, PatternFill, Side
 from openpyxl.worksheet.worksheet import Worksheet
 
 FONT = "Arial"
-GREEN = "1F5C3A"       # headers
-LINK = "008000"        # values pulled from another sheet
+GREEN = "1F5C3A"  # headers
+LINK = "008000"  # values pulled from another sheet
 INPUT_TEXT = "0000FF"  # cells a human types into
 PALE_RED = "F8D0CC"
 PALE_GREEN = "C8E6C9"

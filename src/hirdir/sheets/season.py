@@ -6,6 +6,7 @@ types into a game sheet.
 
 from __future__ import annotations
 
+from openpyxl.styles import Alignment
 from openpyxl.utils import get_column_letter as L
 
 from ..config import TeamConfig
@@ -34,14 +35,16 @@ def build(wb, cfg: TeamConfig, cols: GameColumns, first_game_row: int):
 
     title = " · ".join(x for x in (cfg.team, cfg.season, "Season overview") if x)
     cell(ws, "A1", title, f(16, True, GREEN))
-    cell(
+    note = cell(
         ws,
         "A2",
-        "Filled in automatically from the game sheets — edit those, not this. Game columns "
-        "show minutes played, or ✓ if the kid came but has no minutes recorded.",
+        "Filled in automatically from the game sheets — edit those, not this. Game columns show "
+        "minutes played, ✓ if the kid came but has no minutes recorded, A if they were away.",
         f(9, italic=True),
         LEFT,
     )
+    note.alignment = Alignment(horizontal="left", vertical="center")  # one line, spills right
+    ws.row_dimensions[2].height = 18
 
     heads = ["#", "Player"]
     heads += [
@@ -95,7 +98,7 @@ def build(wb, cfg: TeamConfig, cols: GameColumns, first_game_row: int):
             c.number_format = "0"
 
         span = f"{L(first_game_col)}{row}:{L(last_game_col)}{row}"
-        games_col = L(totals_col)       # Games
+        games_col = L(totals_col)  # Games
         minutes_col = L(totals_col + 2)  # Minutes — Missed sits between them
         played = f'=COUNT({span})+COUNTIF({span},"✓")'
         cell(ws, f"{games_col}{row}", played, f(11, True), CENTER, BOX)
@@ -103,15 +106,15 @@ def build(wb, cfg: TeamConfig, cols: GameColumns, first_game_row: int):
         fair = ",".join(game_ref(g, cols.fair, grow) for g in range(n_games))
         goals = ",".join(game_ref(g, cols.goals, grow) for g in range(n_games))
         totals = [
-            (f'=COUNTIF({span},"{ABSENT}")', f(11), None),              # Missed
-            (f"=SUM({mins})", f(11), "0"),                              # Minutes
+            (f'=COUNTIF({span},"{ABSENT}")', f(11), None),  # Missed
+            (f"=SUM({mins})", f(11), "0"),  # Minutes
             (
                 f'=IF({games_col}{row}=0,"",{minutes_col}{row}/{games_col}{row})',
                 f(11),
                 "0.0",
-            ),                                                          # Min / game
-            (f"=SUM({fair})", f(11, True), "+0;-0;0"),                   # ± fair
-            (f"=SUM({goals})", f(11), None),                             # Goals
+            ),  # Min / game
+            (f"=SUM({fair})", f(11, True), "+0;-0;0"),  # ± fair
+            (f"=SUM({goals})", f(11), None),  # Goals
         ]
         for j, (formula, font, number_format) in enumerate(totals, start=1):
             c = cell(ws, f"{L(totals_col + j)}{row}", formula, font, CENTER, BOX)

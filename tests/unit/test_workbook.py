@@ -1,14 +1,16 @@
 from datetime import date
 
+import pytest
 from openpyxl import load_workbook
 
-from hirdir import workbook
-from hirdir.layout import FIRST_PLAYER_ROW, SPARE_ROWS, game_columns
+from hirdir import config, workbook
+from hirdir.layout import FIRST_PLAYER_ROW, SPARE_ROWS, game_columns, settings_cells
+from hirdir.sheets.game import SETTINGS_LABELS, _column_widths
 
 
-def test_tabs_are_roster_season_games_then_activities(cfg, workbook_file):
+def test_tabs_are_roster_season_activities_then_games(cfg, workbook_file):
     wb = load_workbook(workbook_file)
-    assert wb.sheetnames == ["Roster", "Season", *cfg.sheet_names, "Activities"]
+    assert wb.sheetnames == ["Roster", "Season", "Activities", *cfg.sheet_names]
 
 
 def test_roster_holds_no_birthdates_or_ages(cfg, workbook_file):
@@ -66,10 +68,30 @@ def test_minutes_sum_every_stint_and_run_to_the_end_minute(cfg, workbook_file):
 
 
 def test_fair_share_divides_the_game_among_the_kids_who_came(cfg, workbook_file):
+    cols = game_columns(cfg)
     ws = load_workbook(workbook_file)[cfg.sheet_names[0]]
-    assert ws["L3"].value.startswith("=IF(OR($D$3=")
-    assert "$D$3*$H$3/COUNTIF" in ws["L3"].value
-    assert ws["H3"].value == cfg.on_field
+    end, side, share = settings_cells(_column_widths(cols), SETTINGS_LABELS)
+    assert ws[side.value_ref.replace("$", "")].value == cfg.on_field
+    formula = ws[share.value_ref.replace("$", "")].value
+    assert f"{end.value_ref}*{side.value_ref}/COUNTIF" in formula
+
+
+@pytest.mark.parametrize("stints", [2, 4, 6])
+def test_settings_labels_have_room_for_their_text(example_data, tmp_path, stints):
+    """A label merged too narrow spills over its neighbour — at any stint count."""
+    example_data["stints"] = stints
+    cfg = config.parse(example_data)
+    path = workbook.write(cfg, tmp_path / f"s{stints}.xlsx")
+    ws = load_workbook(path)[cfg.sheet_names[0]]
+    merged = {str(r) for r in ws.merged_cells.ranges}
+    widths = _column_widths(game_columns(cfg))
+    for field in settings_cells(widths, SETTINGS_LABELS):
+        c1, c2 = field.label_span
+        assert f"{_letter(c1)}3:{_letter(c2)}3" in merged
+        span = sum(widths[c] for c in range(c1, c2 + 1))
+        assert span >= len(field.label), f"{field.label!r} needs more room"
+        # the label must not run into the value cell next to it
+        assert field.value_span[0] > c2
 
 
 def test_season_reads_every_game_sheet(cfg, workbook_file):

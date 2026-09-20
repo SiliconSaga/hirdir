@@ -5,7 +5,14 @@ from hirdir import config
 
 def test_players_are_ordered_youngest_first(cfg):
     assert [p.name for p in cfg.players] == [
-        "Dev", "Gita", "Bjorn", "Cleo", "Hugo", "Esme", "Ada", "Finn",
+        "Dev",
+        "Gita",
+        "Bjorn",
+        "Cleo",
+        "Hugo",
+        "Esme",
+        "Ada",
+        "Finn",
     ]
 
 
