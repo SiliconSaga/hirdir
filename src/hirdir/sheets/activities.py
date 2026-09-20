@@ -1,8 +1,10 @@
 """Activities tab: the practice-drill library the game sheets pick from.
 
 Seeded with what worked for the Little Kickers last season plus well-known
-drills. Phase 2 moves this into a database so activities can be suggested per
-team and rated over time; for now the coach edits the tab.
+drills. Every seeded activity keeps the whole team busy at once, each kid with
+their own ball: at this age a queue is where the attention goes. Phase 2 moves
+this into a database so activities can be suggested per team and rated over
+time; for now the coach edits the tab.
 """
 
 from __future__ import annotations
@@ -100,11 +102,39 @@ SEED = [
         "Classic",
     ),
     (
-        "Shooting gallery",
+        "Shooting stampede",
         "Skill",
         "LK+",
-        "Line of balls a few steps from the goal; kids take turns shooting, fetch their "
-        "ball, rejoin the line. Keep lines short.",
+        "Everyone spreads out with a ball a few steps from the goal and shoots on the "
+        "coach's call, all at once — then fetches their own ball and finds a new spot. "
+        "No queue, so nobody stands still waiting for a turn.",
+        "Classic (no-line version)",
+    ),
+    (
+        "Follow the Leader",
+        "Warm-up",
+        "LK+",
+        "Everyone dribbles their own ball behind the coach, who wanders the area changing "
+        "speed and direction — fast, slow, big circle, stop. Kids copy. Promote a kid to "
+        "leader once they have the idea.",
+        "Classic",
+    ),
+    (
+        "Animal dribbles",
+        "Warm-up",
+        "LK+",
+        "Everyone dribbles their own ball as the animal the coach calls: elephant (slow, "
+        "heavy touches), mouse (tiny quick touches), kangaroo (jump over the ball), crab "
+        "(sideways). Silly, and it teaches touch weight.",
+        "Classic",
+    ),
+    (
+        "Toe taps and pull-backs",
+        "Warm-up",
+        "LK+",
+        "Each kid stands over their own ball: tap the top with alternating toes while the "
+        "coach counts, then pull it back with the sole and go again. Fine for a cold day "
+        "because everyone is moving on the spot.",
         "Classic",
     ),
 ]
@@ -118,7 +148,8 @@ def build(wb) -> str:
         ws,
         "A2",
         "Add your own rows below. Game sheets offer this list as a drop-down in the practice "
-        "section (you can still type anything).",
+        "section (you can still type anything). House rule for anything added here: every kid "
+        "has their own ball and everyone goes at once — no lines, no waiting for a turn.",
         f(9, italic=True),
         LEFT,
     )

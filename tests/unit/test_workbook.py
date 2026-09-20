@@ -136,6 +136,20 @@ def test_absent_rows_grey_out_per_row_not_all_at_once(cfg, workbook_file):
     assert str(rng.sqref) == f"A{first}:{_letter(cols.last)}{first + len(cfg.players) + 1}"
 
 
+def test_activities_offer_warm_ups_and_never_a_queue(workbook_file):
+    """House rule: every kid with a ball, everyone at once — no waiting in line."""
+    ws = load_workbook(workbook_file)["Activities"]
+    rows = [
+        [ws.cell(row=r, column=c).value for c in range(1, 6)]
+        for r in range(FIRST_PLAYER_ROW, ws.max_row + 1)
+        if ws.cell(row=r, column=1).value
+    ]
+    assert sum(1 for row in rows if row[1] == "Warm-up") >= 3
+    for name, _kind, _ages, how, _source in rows:
+        assert "rejoin the line" not in how.lower(), f"{name} makes kids queue"
+        assert "take turns" not in how.lower(), f"{name} makes kids queue"
+
+
 def test_written_file_lands_where_asked(cfg, tmp_path):
     out = workbook.write(cfg, tmp_path / "nested" / "book.xlsx")
     assert out.exists()
