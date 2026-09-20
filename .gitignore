@@ -1,0 +1,12 @@
+# Team data and generated workbooks live here and never leave this machine:
+# rosters name children. Only examples/ (invented names) is committed.
+/local/
+
+.venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.ruff_cache/
+*.egg-info/
+dist/
+build/
