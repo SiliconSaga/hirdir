@@ -137,6 +137,41 @@ Offline queueing of dictated notes is possible — they are just events — but 
 - Sending first names to a model API is a different promise than "everything stays on your phone". It is defensible — first names alone, no surnames, no birthdates, no contact details — but it is the coach's call to make knowingly, and the README must say what leaves the device.
 - **Decided 2026-09-20:** dictation accepts **either names or jersey numbers, interchangeably** — "seven off, three on" and "Judah off, Mia on" resolve the same way, because a coach thinks in whichever comes first under pressure. The coach accepts first names reaching the model: disjointed first names, with no surnames, birthdates, or contact details, are a proportionate exposure for the benefit. Hirðir deliberately holds the **minimum identifying data** — first name, jersey number, and (locally only, never in a workbook or a request) a birthdate used solely for lineup order. TeamSnap remains the system of record for everything else; we copy the minimum across rather than mirroring a child's file.
 
+## The forgotten whistle, and the wrap-up
+
+Decided 2026-09-21, not yet built.
+
+The clock persists as a wall-clock timestamp, so a game nobody ended keeps running while the page is closed — and anyone still on the field keeps accruing with it, because an open stint counts up to "now". Reopen the next morning and the game reads fourteen hours with three kids owed a lifetime. A forgotten whistle doesn't just look wrong, it corrupts that game's minutes and every ± fair derived from them.
+
+**Soft cap, never a silent edit.** A game whose clock has run past a configurable maximum (two hours covers every MTL format, including a whole Little Kickers session with practice) is paused on open and the coach is asked what happened. The app never rewrites the log by itself; the log only ever grows by the coach's answer.
+
+**The ask is an opportunity, not an apology.** The coach is reconstructing anyway, so the wrap-up invites the last few things that never got tapped:
+
+- **A suggested end time**, derived rather than guessed: the last recorded event plus a short grace. "The last sub was at 38 minutes — did it end around 43?" That is a far easier question than "what minute did the game end?".
+- **The bits that happened after the last tap** — a late goal, a kid who came off early, a note while it is still fresh. This is the part worth building well: the end of a game is exactly when a coach remembers that Judah scored and that someone spent the last ten minutes crying at the cone.
+
+**Reconstructed events are marked as such.** Anything added during the wrap-up carries a flag distinguishing it from something tapped live. The ledger's value is that it records what happened; a memory recorded as an observation is still worth having, but it should not claim to be a stopwatch reading. Phase 3's roster balancing will read these; it should know which ones were remembered.
+
+Open: whether the same wrap-up should be offered voluntarily at the final whistle, rather than only as a rescue for a forgotten one. Probably yes — the prompting is useful regardless of whether anyone forgot anything.
+
+## Flavors — the same app at three levels of ambition
+
+Decided 2026-09-21. This mirrors how `kubicvalheim` ships (plain Docker / plain k8s / GitOps) and what `kubicgamehosting` does across the stack: one thing, adopted at the depth a given operator wants.
+
+**A hard constraint shapes all of it: there are dozens of MTL coaches, most of whom have never thought about Google Sheets, OAuth consent, or what a token is.** Any flavor that requires a coach to set something up before their first game is a flavor that will not be used. Setup burden belongs to whoever runs the league's instance, never to the coach with a whistle in their mouth.
+
+| Flavor | What a coach does | What it needs | What it buys |
+|---|---|---|---|
+| **Standalone** (built) | Opens a URL, imports a roster, coaches | Nothing. A static page. | Field time, goals, notes, export. Data never leaves the phone. |
+| **Hosted** | Logs in | A pod, Postgres from `mimir`, Keycloak | Season history, a second device, voice notes interpreted server-side, rosters handed to them rather than imported |
+| **Connected** | Logs in | The above, plus credentials held *by the service* | The league's Google Sheet as roster of record, TeamSnap import, results flowing back — with no coach ever seeing a consent screen |
+
+The point of the table is the last column of the last row: **in the connected flavor the integration credential belongs to the service, not the coach.** That is the `skipta` and `skipan` pattern — Workload Identity, no key, the pod reads the sheet as itself — and it is what lets a non-technical coach benefit from a Sheets integration without knowing one exists.
+
+This also revisits an earlier note: a browser-only Google sign-in could technically let a static page read and write a sheet, and it is genuinely viable for *one* technically-inclined coach. It is the wrong default here, for the reason above. Recording it so the option isn't rediscovered and mistaken for a shortcut.
+
+**What this asks of the architecture, cheaply, now:** the app should treat its storage as an interface rather than assume `localStorage`, so a remote store slots in behind the same calls; and it should decide its flavor from configuration it is given, defaulting to standalone when there is none. `storage.js` is already shaped that way (the backing is injected). Nothing else needs building until the hosted flavor is real.
+
 ## Phase 2 — backend, auth, and the Google Sheet
 
 Sketched, not specced; a separate design round. What the coach has already settled:
@@ -150,6 +185,6 @@ Sketched, not specced; a separate design round. What the coach has already settl
 
 1. **Does the two-tap sub survive a real game?** The proposal-to-confirm step assumes the longest-on kid is usually the right one to pull. If it is wrong more often than it is right, the second tap becomes a correction and the flow is worse than a single-tap toggle. Answered by using it, not by discussion.
 2. **Is the bench sort stable enough to tap?** Re-sorting after every event could move a row under the coach's thumb. A settle delay, or freezing the order while a sub is in progress, may be needed.
-3. **What happens to a game that is never ended?** A forgotten `game_end` leaves a clock running for days. Probably a soft prompt on next open, never an automatic edit of the record.
+3. ~~**What happens to a game that is never ended?**~~ Settled 2026-09-21 — see "The forgotten whistle, and the wrap-up" above: soft cap, ask, suggest an end time from the last event, and use the moment to collect what never got tapped.
 4. **Does the phone's download work from the installed app?** Determines whether export needs the copy-to-clipboard fallback.
 5. **Where does the app live, exactly?** A repo-level GitHub Pages path is simplest; a friendlier hostname is nicer to type on a phone. The page holds no roster either way, but a public URL that looks like a league tool invites questions worth pre-empting.
