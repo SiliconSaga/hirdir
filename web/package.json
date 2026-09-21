@@ -1,0 +1,6 @@
+{
+  "name": "hirdir-web",
+  "private": true,
+  "type": "module",
+  "description": "Field app — no dependencies, no build step. Tests: node --test web/tests"
+}
