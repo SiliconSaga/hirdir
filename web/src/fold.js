@@ -47,6 +47,39 @@ export function fold(events, roster, nowT) {
       case "sub_out":
         off(kid, event.t);
         break;
+      case "roll_call": {
+        const next = new Set(event.on ?? []);
+        for (const k of kids.values()) {
+          if (next.has(k.id)) on(k, event.t);
+          else off(k, event.t);
+        }
+        break;
+      }
+      case "absent":
+        if (kid) {
+          off(kid, event.t);
+          kid.present = false;
+        }
+        break;
+      case "present":
+        if (kid) kid.present = true;
+        break;
+      case "goal":
+        if (kid) kid.goals += 1;
+        break;
+      case "flag":
+        if (kid) {
+          if (kid.flags.has(event.flag)) kid.flags.delete(event.flag);
+          else kid.flags.add(event.flag);
+        }
+        break;
+      case "note":
+        state.notes.push({
+          t: event.t,
+          text: event.text,
+          on: [...kids.values()].filter((k) => k.onField).map((k) => k.id),
+        });
+        break;
       default:
         break;
     }
