@@ -1,0 +1,62 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+    <title>Hirðir — field app</title>
+    <meta name="theme-color" content="#1f5c3a">
+    <link rel="stylesheet" href="app.css">
+    <link rel="manifest" href="manifest.webmanifest">
+    <script type="module" src="src/main.js"></script>
+  </head>
+  <body>
+    <header>
+      <div id="clock">0:00</div>
+      <button id="clock-toggle" class="big">Start</button>
+      <div id="count" aria-live="polite">0/4</div>
+    </header>
+
+    <section id="pending" hidden>
+      <p><strong id="pending-in"></strong> goes on<span id="pending-swap"> for <strong id="pending-out"></strong></span>?</p>
+      <div class="row">
+        <button id="pending-confirm" class="big primary">Confirm</button>
+        <button id="pending-cancel" class="big">Cancel</button>
+      </div>
+      <p class="hint">Tap a different name above to swap someone else out.</p>
+    </section>
+
+    <h2>On the field</h2>
+    <ul id="on-field" class="kid-list"></ul>
+
+    <h2>Bench — most owed first</h2>
+    <ul id="bench" class="kid-list"></ul>
+
+    <div class="row">
+      <button id="undo" class="big">Undo</button>
+      <button id="rollcall" class="big">Roll call</button>
+    </div>
+
+    <dialog id="rollcall-dialog">
+      <p>Tap everyone who is on the field right now.</p>
+      <div id="rollcall-grid"></div>
+      <div class="row">
+        <button id="rollcall-save" class="big primary">That's who's on</button>
+        <button id="rollcall-cancel" class="big">Cancel</button>
+      </div>
+    </dialog>
+
+    <h2>Note</h2>
+    <textarea id="note-text" rows="2"
+      placeholder="Tap here and use your keyboard's mic…"></textarea>
+    <button id="note-save" class="big">Save note</button>
+
+    <details id="setup">
+      <summary>Setup and export</summary>
+      <p class="hint">Load a team config (the same JSON <code>hirdir build</code> reads). This clears the current game.</p>
+      <input type="file" id="import-file" accept="application/json">
+      <button id="export" class="big">Export game</button>
+      <button id="end-game" class="big">End game</button>
+      <p class="hint">Everything stays on this phone. Nothing is sent anywhere.</p>
+    </details>
+  </body>
+</html>

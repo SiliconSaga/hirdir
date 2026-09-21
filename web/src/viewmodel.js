@@ -43,7 +43,8 @@ export function buildView(state, { clockSeconds, onFieldTarget, pendingSub, logS
       goals: kid.goals,
       flags: [...kid.flags],
       deficit: signedMinutes(deficit(kid, fair)),
-      owed: deficit(kid, fair) < 0,
+      // A full minute behind, so the highlight matches the number on the row.
+      owed: deficit(kid, fair) <= -60,
     })),
     pending,
     canUndo: logSize > 0,
