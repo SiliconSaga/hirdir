@@ -11,7 +11,9 @@ const cell = (value) => {
   // a leading tab/CR/LF can smuggle one past that check. Numbers stay numeric,
   // so a negative ± fair is unaffected.
   if (typeof value === "string" && /^[=+\-@\t\r\n]/.test(text)) text = `'${text}`;
-  return /[",\n]/.test(text) ? `"${text.replaceAll('"', '""')}"` : text;
+  // \r counts as a line break to many CSV readers, so a value carrying one
+  // mid-string must be quoted too, or "Ada\r=1+1" arrives as its own row.
+  return /[",\n\r]/.test(text) ? `"${text.replaceAll('"', '""')}"` : text;
 };
 
 const minutes = (seconds) => Math.round(seconds / 60);

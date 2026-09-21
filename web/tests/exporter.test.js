@@ -61,6 +61,13 @@ test("numbers stay numeric, so a negative fair-share difference is not quoted", 
   assert.equal(toCsv(state, 600, 4).split("\n")[1], "Ada,1,✓,10,-30,0,,,,");
 });
 
+test("a carriage return mid-value is quoted, so it cannot start a new row", () => {
+  const state = fold([ev(0, "game_start")], [{ id: "k1", name: "Ada\r=1+1", jersey: 7 }], 60);
+  const csv = toCsv(state, 60, 4);
+  assert.match(csv, /"Ada\r=1\+1"/);
+  assert.equal(csv.split("\n").length, 2); // header plus one row, not three
+});
+
 test("a name containing a comma is quoted", () => {
   const state = fold([ev(0, "game_start")], [{ id: "k1", name: "Ada, Jr", jersey: 7 }], 60);
   assert.match(toCsv(state, 60, 4), /"Ada, Jr"/);

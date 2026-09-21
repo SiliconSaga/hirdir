@@ -91,7 +91,7 @@ If you already know a kid will miss the next game, type `A` in that game's sheet
 
 `web/` is a single static page — no backend, no framework, no build step — that keeps the ledger during a game so the paper doesn't have to. It publishes to this repo's GitHub Pages on every push to `main`, and installs to a phone's home screen.
 
-- **Everything stays in your browser.** No account, no server, no network call of any kind. Clearing site data clears the game.
+- **Everything stays in your browser.** No account, and nothing about the team is ever sent anywhere — the only network use is fetching the page itself, which the service worker then caches. Clearing site data clears the game.
 - **Import** the same team config `hirdir build` reads, from *Setup and export*.
 - **During a game:** tap a bench kid to send them on. While there is room on the field nobody comes off; once it's full, the app proposes the kid who has been on longest, and you can tap any other on-field name instead. **Undo** reverses the last action. **Roll call** re-states who is actually on the field when reality has drifted.
 - The bench is sorted by **who is owed the most time**, with each kid's deficit against a fair share, so "who's next?" needs no arithmetic.
