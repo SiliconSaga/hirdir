@@ -5,7 +5,11 @@ import { fairShareSeconds } from "./selectors.js";
 const HEADER = "Player,Jersey,Here,Minutes played,+/- fair,Goals,Star,Shy,Needs help,Notes";
 
 const cell = (value) => {
-  const text = value === null || value === undefined ? "" : String(value);
+  if (value === null || value === undefined) return "";
+  let text = String(value);
+  // A name or note starting = + - @ is read as a formula by spreadsheets.
+  // Numbers stay numeric, so a negative ± fair is unaffected.
+  if (typeof value === "string" && /^[=+\-@]/.test(text)) text = `'${text}`;
   return /[",\n]/.test(text) ? `"${text.replaceAll('"', '""')}"` : text;
 };
 

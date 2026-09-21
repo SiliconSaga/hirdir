@@ -49,3 +49,28 @@ test("a config with no players is rejected with a readable message", () => {
 test("a player with no name is rejected", () => {
   assert.throws(() => importTeam({ team: "T", players: [{ dob: "2021-01-01" }] }), /name/);
 });
+
+test("players sharing a birthdate keep their listed order, as the workbook does", () => {
+  const twins = {
+    team: "T",
+    players: [
+      { name: "First", dob: "2021-05-04" },
+      { name: "Second", dob: "2021-05-04" },
+      { name: "Third", dob: "2021-05-04" },
+    ],
+  };
+  assert.deepEqual(
+    importTeam(twins).roster.map((k) => k.name),
+    ["First", "Second", "Third"],
+  );
+});
+
+test("a nonsense players-per-side is rejected rather than poisoning fair share", () => {
+  for (const bad of ["lots", 0, -2, 2.5, {}]) {
+    assert.throws(
+      () => importTeam({ team: "T", on_field: bad, players: [{ name: "A" }] }),
+      /whole number of players/,
+      `expected ${JSON.stringify(bad)} to be rejected`,
+    );
+  }
+});

@@ -68,6 +68,27 @@ test("undo is unavailable before anything has happened", () => {
   );
 });
 
+test("the clock button follows the clock, not the game's lifecycle", () => {
+  const state = fold([ev(0, "game_start")], roster, 60);
+  const view = (clockRunning) =>
+    buildView(state, { clockSeconds: 60, onFieldTarget: 2, pendingSub: null, clockRunning });
+  assert.equal(view(true).running, true);
+  assert.equal(view(false).running, false); // paused mid-game must not read "Pause"
+});
+
+test("kids marked absent appear in an away list so they can come back", () => {
+  const state = fold([ev(0, "game_start"), ev(10, "absent", { kid: "k3" })], roster, 60);
+  const view = buildView(state, { clockSeconds: 60, onFieldTarget: 2, pendingSub: null });
+  assert.deepEqual(
+    view.away.map((k) => k.name),
+    ["Eli"],
+  );
+  assert.equal(
+    view.bench.some((k) => k.id === "k3"),
+    false,
+  );
+});
+
 test("rows carry goals and flags so the row can show them", () => {
   const state = fold(
     [

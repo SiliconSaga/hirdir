@@ -31,6 +31,11 @@
     <h2>Bench — most owed first</h2>
     <ul id="bench" class="kid-list"></ul>
 
+    <section id="away-section" hidden>
+      <h2>Away today</h2>
+      <ul id="away" class="kid-list"></ul>
+    </section>
+
     <div class="row">
       <button id="undo" class="big">Undo</button>
       <button id="rollcall" class="big">Roll call</button>
@@ -52,7 +57,7 @@
 
     <details id="setup">
       <summary>Setup and export</summary>
-      <p class="hint">Load a team config (the same JSON <code>hirdir build</code> reads). This clears the current game.</p>
+      <label for="import-file">Team config (the same JSON <code>hirdir build</code> reads) — loading one clears the current game</label>
       <input type="file" id="import-file" accept="application/json">
       <button id="export" class="big">Export game</button>
       <button id="end-game" class="big">End game</button>

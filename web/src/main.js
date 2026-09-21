@@ -22,7 +22,8 @@ const now = () => clock.elapsed();
 const current = () => fold(log.events, team.roster, now());
 
 function persist() {
-  storage.save({ ...team, events: log.events, clock: clock.state() });
+  team = { ...team, clock: clock.state() };
+  storage.save({ ...team, events: log.events });
 }
 
 function draw() {
@@ -32,14 +33,25 @@ function draw() {
       onFieldTarget: team.onFieldTarget,
       pendingSub,
       logSize: log.size(),
+      clockRunning: clock.isRunning(),
     }),
   );
 }
 
-function append(type, fields = {}) {
-  log.append(type, fields, now());
+function append(type, fields = {}, group = null) {
+  log.append(type, fields, now(), group);
   persist();
   draw();
+}
+
+// The game has started when the log says so — not when the log is merely
+// non-empty, since marking someone absent before kickoff is an event too.
+function startGame() {
+  if (!current().started) log.append("game_start", {}, now());
+  if (!clock.isRunning()) {
+    clock.start();
+    requestWakeLock();
+  }
 }
 
 async function requestWakeLock() {
@@ -60,19 +72,22 @@ function releaseWakeLock() {
 }
 
 function kidAction(kidId, action) {
+  if (current().ended) return; // the game is over; the log stands as it ended
+
   if (action === "on") {
-    if (!log.size()) append("game_start");
-    if (!clock.isRunning()) {
-      clock.start();
-      requestWakeLock();
-    }
-    // Nobody comes off while there is still room on the field — filling up at
-    // kickoff is not a swap.
+    startGame();
+    // With room on the field a tap just puts them on: no confirm step at
+    // kickoff, which is the busiest moment. Confirm is for real swaps.
     const state = current();
     const onNow = [...state.kids.values()].filter((kid) => kid.onField).length;
-    const proposedOut = onNow >= team.onFieldTarget ? (proposeSubOff(state)?.id ?? null) : null;
-    pendingSub = { inKid: kidId, proposedOut };
+    if (onNow < team.onFieldTarget) {
+      append("sub_in", { kid: kidId });
+      return;
+    }
+    pendingSub = { inKid: kidId, proposedOut: proposeSubOff(state)?.id ?? null };
     draw();
+  } else if (action === "present") {
+    append("present", { kid: kidId });
   } else if (action === "off") {
     if (pendingSub) {
       pendingSub = { ...pendingSub, proposedOut: kidId };
@@ -92,7 +107,9 @@ function kidAction(kidId, action) {
 function exportGame() {
   const state = current();
   const csv = toCsv(state, now(), team.onFieldTarget);
-  const json = toJson({ v: 1, ...team, events: log.events });
+  // clock.state() rather than team.clock: the export must carry where the
+  // clock actually is, not where it was when the page loaded.
+  const json = toJson({ v: 1, ...team, clock: clock.state(), events: log.events });
   const stamp = new Date().toISOString().slice(0, 10);
   const base = `${(team.team || "game").replace(/\s+/g, "-").toLowerCase()}-${stamp}`;
   try {
@@ -118,21 +135,24 @@ function exportGame() {
 bind({
   kidAction,
   toggleClock() {
+    if (current().ended) return;
     if (clock.isRunning()) {
       clock.pause();
       releaseWakeLock();
+      persist();
+      draw();
     } else {
-      clock.start();
-      requestWakeLock();
-      if (!log.size()) log.append("game_start", {}, 0);
+      startGame();
+      persist();
+      draw();
     }
-    persist();
-    draw();
   },
   confirmSub() {
-    if (!pendingSub) return;
-    if (pendingSub.proposedOut) append("sub_out", { kid: pendingSub.proposedOut });
-    append("sub_in", { kid: pendingSub.inKid });
+    if (!pendingSub || current().ended) return;
+    // One action by the coach, so one group: undo takes the swap back whole.
+    const group = log.nextGroup();
+    if (pendingSub.proposedOut) append("sub_out", { kid: pendingSub.proposedOut }, group);
+    append("sub_in", { kid: pendingSub.inKid }, group);
     pendingSub = null;
     draw();
   },
@@ -140,8 +160,19 @@ bind({
     pendingSub = null;
     draw();
   },
+  // Undo means "take back that action", so the clock follows the events it
+  // removes: taking back the kickoff must not leave time accruing, and taking
+  // back the final whistle reopens the game.
   undo() {
-    log.undo();
+    const removed = log.undo();
+    if (removed.some((event) => event.type === "game_start")) {
+      clock = createClock(() => Date.now(), null);
+      releaseWakeLock();
+    } else if (removed.some((event) => event.type === "game_end")) {
+      clock.resume();
+      requestWakeLock();
+    }
+    pendingSub = null;
     persist();
     draw();
   },
@@ -160,14 +191,21 @@ bind({
     );
   },
   endGame() {
+    if (current().ended) return;
     append("game_end");
     clock.pause();
     releaseWakeLock();
+    pendingSub = null;
     persist();
     draw();
   },
   exportGame,
   async importConfig(file) {
+    // Importing wipes the game, and the file picker is one tap from the
+    // export button — so a game in progress asks first.
+    if (log.size() && !window.confirm("Load a new team? This clears the game in progress.")) {
+      return;
+    }
     try {
       const parsed = importTeam(JSON.parse(await file.text()));
       team = { ...parsed, events: [], clock: null };

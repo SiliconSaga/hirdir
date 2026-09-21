@@ -1,7 +1,10 @@
 // Cache-first app shell, so a dead signal at the field changes nothing.
 // Bump CACHE when the shell changes; activate deletes every older cache.
 
-const CACHE = "hirdir-v1";
+// github.io serves every repo's Pages site from one origin, so only ever
+// delete caches this app owns.
+const CACHE_PREFIX = "hirdir-";
+const CACHE = `${CACHE_PREFIX}v1`;
 const SHELL = [
   ".",
   "index.html",
@@ -28,7 +31,13 @@ self.addEventListener("activate", (event) => {
   event.waitUntil(
     caches
       .keys()
-      .then((names) => Promise.all(names.filter((name) => name !== CACHE).map((name) => caches.delete(name))))
+      .then((names) =>
+        Promise.all(
+          names
+            .filter((name) => name.startsWith(CACHE_PREFIX) && name !== CACHE)
+            .map((name) => caches.delete(name)),
+        ),
+      )
       .then(() => self.clients.claim()),
   );
 });

@@ -99,7 +99,7 @@ If you already know a kid will miss the next game, type `A` in that game's sheet
 - **Offline:** a service worker caches the app shell, so a dead signal at the field changes nothing.
 - **Wet screens** are a physical problem, not a software one — capacitive touch misreads water. Big targets and undo soften it; a sandwich bag or a cheap waterproof pouch actually solves it.
 
-Run it locally with any static server, for example `python3 -m http.server 8000 --directory web`, or just open `web/index.html` — the service worker registers only over http(s), so opening from disk still works.
+Run it locally with a static server — `python3 -m http.server 8000 --directory web`, then open <http://localhost:8000>. Opening `web/index.html` straight from disk does **not** work: browsers block ES modules over `file://` as a cross-origin request, so the page renders but no script runs. (The service worker is skipped outside http(s) regardless.)
 
 ## Development
 

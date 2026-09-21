@@ -12,7 +12,10 @@ const signedMinutes = (seconds) => {
   return value > 0 ? `+${value}` : String(value);
 };
 
-export function buildView(state, { clockSeconds, onFieldTarget, pendingSub, logSize = 0 }) {
+export function buildView(
+  state,
+  { clockSeconds, onFieldTarget, pendingSub, logSize = 0, clockRunning = false },
+) {
   const fair = fairShareSeconds(state, clockSeconds, onFieldTarget);
   const on = onFieldOrder(state);
   const pending = pendingSub
@@ -25,7 +28,9 @@ export function buildView(state, { clockSeconds, onFieldTarget, pendingSub, logS
 
   return {
     clock: formatMmSs(clockSeconds),
-    running: state.started && !state.ended,
+    // The button label follows the clock itself, not the game's lifecycle: a
+    // paused clock must not still read "Pause".
+    running: clockRunning,
     countLabel: `${on.length}/${onFieldTarget}`,
     countWarning: on.length !== onFieldTarget,
     onField: on.map((kid) => ({
@@ -46,6 +51,11 @@ export function buildView(state, { clockSeconds, onFieldTarget, pendingSub, logS
       // A full minute behind, so the highlight matches the number on the row.
       owed: deficit(kid, fair) <= -60,
     })),
+    // Kids marked absent leave both lists, so they need somewhere to live or
+    // there is no way back from a mis-tapped "A".
+    away: [...state.kids.values()]
+      .filter((kid) => !kid.present)
+      .map((kid) => ({ id: kid.id, name: kid.name, jersey: kid.jersey })),
     pending,
     canUndo: logSize > 0,
     ended: state.ended,

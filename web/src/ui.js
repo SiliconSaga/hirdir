@@ -2,12 +2,16 @@
 
 const $ = (id) => document.getElementById(id);
 
-function markButton(action, label, { set = false, aria = null } = {}) {
+function markButton(action, label, { set = null, aria = null } = {}) {
   const button = document.createElement("button");
   button.dataset.action = action;
   button.textContent = label;
-  if (set) button.className = "set";
   if (aria) button.setAttribute("aria-label", aria);
+  // Toggles announce their state; one-shot buttons (a goal) have none.
+  if (set !== null) {
+    button.classList.toggle("set", set);
+    button.setAttribute("aria-pressed", String(set));
+  }
   return button;
 }
 
@@ -19,16 +23,25 @@ function kidRow(kid, { onField }) {
   const main = document.createElement("button");
   main.className = "kid-main";
   main.dataset.action = onField ? "off" : "on";
+
+  const jersey = document.createElement("span");
+  jersey.className = "jersey";
+  jersey.textContent = kid.jersey ?? "";
+
+  // Name above, time below: side by side, four 48px marks left the name
+  // truncated to "Bjo…", and the name is the whole point of the row.
+  const who = document.createElement("span");
+  who.className = "who";
   for (const [className, text] of [
-    ["jersey", kid.jersey ?? ""],
     ["name", kid.name],
     ["meta", onField ? kid.stint : `${kid.deficit} min`],
   ]) {
     const span = document.createElement("span");
     span.className = className;
     span.textContent = text;
-    main.append(span);
+    who.append(span);
   }
+  main.append(jersey, who);
 
   // Four marks per row, no more: a kid on the bench cannot score, and a kid on
   // the field is plainly here. Five buttons overflowed the card on a phone.
@@ -39,8 +52,11 @@ function kidRow(kid, { onField }) {
       ? markButton("goal", `⚽${kid.goals || ""}`, { aria: `Goal for ${kid.name}` })
       : markButton("absent", "A", { aria: `${kid.name} is not here today` }),
     markButton("star", "★", { set: kid.flags.includes("star"), aria: `Doing great: ${kid.name}` }),
-    markButton("shy", "shy", { set: kid.flags.includes("shy") }),
-    markButton("help", "help", { set: kid.flags.includes("help") }),
+    markButton("shy", "shy", { set: kid.flags.includes("shy"), aria: `Shy: ${kid.name}` }),
+    markButton("help", "help", {
+      set: kid.flags.includes("help"),
+      aria: `Needs help: ${kid.name}`,
+    }),
   );
 
   li.append(main, marks);
@@ -56,6 +72,27 @@ export function render(view) {
 
   $("on-field").replaceChildren(...view.onField.map((kid) => kidRow(kid, { onField: true })));
   $("bench").replaceChildren(...view.bench.map((kid) => kidRow(kid, { onField: false })));
+
+  $("away-section").hidden = view.away.length === 0;
+  $("away").replaceChildren(
+    ...view.away.map((kid) => {
+      const li = document.createElement("li");
+      li.className = "kid away";
+      li.dataset.kid = kid.id;
+      const button = document.createElement("button");
+      button.className = "kid-main";
+      button.dataset.action = "present";
+      button.setAttribute("aria-label", `${kid.name} is here after all`);
+      button.textContent = `${kid.name} — tap if they turn up`;
+      li.append(button);
+      return li;
+    }),
+  );
+
+  // Once the game is over nothing new gets recorded — but undo still works,
+  // because ending it by mis-tap is exactly what needs taking back.
+  $("undo").disabled = !view.canUndo;
+  for (const id of ["rollcall", "note-save", "clock-toggle"]) $(id).disabled = view.ended;
 
   $("pending").hidden = !view.pending;
   if (view.pending) {
@@ -75,11 +112,15 @@ export function openRollCall(view, onSave) {
     ...everyone.map((kid) => {
       const button = document.createElement("button");
       button.textContent = kid.name;
-      button.className = chosen.has(kid.id) ? "on" : "";
+      const paint = () => {
+        button.classList.toggle("on", chosen.has(kid.id));
+        button.setAttribute("aria-pressed", String(chosen.has(kid.id)));
+      };
+      paint();
       button.addEventListener("click", () => {
         if (chosen.has(kid.id)) chosen.delete(kid.id);
         else chosen.add(kid.id);
-        button.classList.toggle("on", chosen.has(kid.id));
+        paint();
       });
       return button;
     }),
@@ -94,7 +135,7 @@ export function openRollCall(view, onSave) {
 }
 
 export function bind(handlers) {
-  for (const listId of ["on-field", "bench"]) {
+  for (const listId of ["on-field", "bench", "away"]) {
     $(listId).addEventListener("click", (event) => {
       const button = event.target.closest("button");
       const row = event.target.closest(".kid");
