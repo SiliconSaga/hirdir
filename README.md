@@ -87,10 +87,26 @@ If you already know a kid will miss the next game, type `A` in that game's sheet
 
 `± fair` compares a kid's minutes against an even split — game length × players per side ÷ kids present. Red means they are owed time next week.
 
+## Phase 1: the field app
+
+`web/` is a single static page — no backend, no framework, no build step — that keeps the ledger during a game so the paper doesn't have to. It publishes to this repo's GitHub Pages on every push to `main`, and installs to a phone's home screen.
+
+- **Everything stays in your browser.** No account, no server, no network call of any kind. Clearing site data clears the game.
+- **Import** the same team config `hirdir build` reads, from *Setup and export*.
+- **During a game:** tap a bench kid to send them on. While there is room on the field nobody comes off; once it's full, the app proposes the kid who has been on longest, and you can tap any other on-field name instead. **Undo** reverses the last action. **Roll call** re-states who is actually on the field when reality has drifted.
+- The bench is sorted by **who is owed the most time**, with each kid's deficit against a fair share, so "who's next?" needs no arithmetic.
+- **Export** writes a CSV whose columns match the workbook's game sheet, plus the raw event log as JSON.
+- **Offline:** a service worker caches the app shell, so a dead signal at the field changes nothing.
+- **Wet screens** are a physical problem, not a software one — capacitive touch misreads water. Big targets and undo soften it; a sandwich bag or a cheap waterproof pouch actually solves it.
+
+Run it locally with any static server, for example `python3 -m http.server 8000 --directory web`, or just open `web/index.html` — the service worker registers only over http(s), so opening from disk still works.
+
 ## Development
 
 ```bash
-uv run pytest                  # or: ws test hirdir
+uv run pytest                  # Python only
+node --test web/tests          # JavaScript only
+bash scripts/test.sh           # both — this is what `ws test hirdir` runs
 uv run ruff check src tests    # or: ws lint hirdir
 uv run ruff format src tests   # or: ws format hirdir
 ```

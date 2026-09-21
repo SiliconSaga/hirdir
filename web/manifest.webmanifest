@@ -1,0 +1,11 @@
+{
+  "name": "Hirðir — field app",
+  "short_name": "Hirðir",
+  "description": "Field time, goals and notes for a youth soccer game — on your phone, staying on your phone.",
+  "start_url": ".",
+  "scope": ".",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#ffffff",
+  "theme_color": "#1f5c3a"
+}
