@@ -9,7 +9,10 @@ const DEFAULT_ON_FIELD = 4;
 // number of players or an error. NaN here would silently poison fair share.
 function onFieldTarget(value) {
   if (value === undefined || value === null || value === "") return DEFAULT_ON_FIELD;
-  const count = Number(value);
+  // Number() is happy to coerce true to 1 and ["3"] to 3, so check the type
+  // before trusting it.
+  const numeric = typeof value === "number" || typeof value === "string";
+  const count = numeric ? Number(value) : NaN;
   if (!Number.isInteger(count) || count < 1) {
     throw new ImportError(`'on_field' must be a whole number of players, got ${JSON.stringify(value)}.`);
   }

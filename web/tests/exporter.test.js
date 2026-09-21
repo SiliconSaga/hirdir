@@ -40,6 +40,27 @@ test("an absent kid is marked A with no minutes", () => {
   assert.equal(rows[2], "Mia,,A,0,,0,,,,");
 });
 
+test("a name that would read as a spreadsheet formula is neutralised", () => {
+  for (const [name, expected] of [
+    ["=1+1", "'=1+1"],
+    ["+Ada", "'+Ada"],
+    ["-Bo", "'-Bo"],
+    ["@Cy", "'@Cy"],
+    ["\tDee", "'\tDee"],
+  ]) {
+    const state = fold([ev(0, "game_start")], [{ id: "k1", name, jersey: 1 }], 60);
+    const row = toCsv(state, 60, 4).split("\n")[1];
+    assert.ok(row.startsWith(expected), `${JSON.stringify(name)} produced ${row}`);
+  }
+});
+
+test("numbers stay numeric, so a negative fair-share difference is not quoted", () => {
+  const solo = [{ id: "k1", name: "Ada", jersey: 1 }];
+  const state = fold([ev(0, "game_start"), ev(0, "sub_in", { kid: "k1" })], solo, 600);
+  // 10 minutes played; fair share is 600s x 4 per side / 1 kid = 40 minutes
+  assert.equal(toCsv(state, 600, 4).split("\n")[1], "Ada,1,✓,10,-30,0,,,,");
+});
+
 test("a name containing a comma is quoted", () => {
   const state = fold([ev(0, "game_start")], [{ id: "k1", name: "Ada, Jr", jersey: 7 }], 60);
   assert.match(toCsv(state, 60, 4), /"Ada, Jr"/);

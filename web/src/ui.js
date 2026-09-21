@@ -68,7 +68,6 @@ export function render(view) {
   $("clock-toggle").textContent = view.running ? "Pause" : "Start";
   $("count").textContent = view.countLabel;
   $("count").classList.toggle("warn", view.countWarning);
-  $("undo").disabled = !view.canUndo;
 
   $("on-field").replaceChildren(...view.onField.map((kid) => kidRow(kid, { onField: true })));
   $("bench").replaceChildren(...view.bench.map((kid) => kidRow(kid, { onField: false })));

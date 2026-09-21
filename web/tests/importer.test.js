@@ -66,7 +66,7 @@ test("players sharing a birthdate keep their listed order, as the workbook does"
 });
 
 test("a nonsense players-per-side is rejected rather than poisoning fair share", () => {
-  for (const bad of ["lots", 0, -2, 2.5, {}]) {
+  for (const bad of ["lots", 0, -2, 2.5, {}, true, [], ["3"]]) {
     assert.throws(
       () => importTeam({ team: "T", on_field: bad, players: [{ name: "A" }] }),
       /whole number of players/,

@@ -17,6 +17,7 @@ let log = createLog(team.events ?? []);
 let clock = createClock(() => Date.now(), team.clock);
 let pendingSub = null;
 let wakeLock = null;
+let wakeGeneration = 0;
 
 const now = () => clock.elapsed();
 const current = () => fold(log.events, team.roster, now());
@@ -54,15 +55,26 @@ function startGame() {
   }
 }
 
+// The request is async, so a pause can land while it is in flight. The
+// generation counter drops a sentinel that arrives after its request was
+// superseded, instead of leaving the screen awake for the rest of the day.
 async function requestWakeLock() {
+  const generation = ++wakeGeneration;
   try {
-    wakeLock = await navigator.wakeLock?.request("screen");
+    const sentinel = await navigator.wakeLock?.request("screen");
+    if (!sentinel) return;
+    if (generation !== wakeGeneration) {
+      sentinel.release().catch(() => {});
+      return;
+    }
+    wakeLock = sentinel;
   } catch {
     /* unsupported or denied: the screen may sleep, the game continues */
   }
 }
 
 function releaseWakeLock() {
+  wakeGeneration += 1;
   try {
     wakeLock?.release();
   } catch {
@@ -165,10 +177,11 @@ bind({
   // back the final whistle reopens the game.
   undo() {
     const removed = log.undo();
+    const ending = removed.find((event) => event.type === "game_end");
     if (removed.some((event) => event.type === "game_start")) {
       clock = createClock(() => Date.now(), null);
       releaseWakeLock();
-    } else if (removed.some((event) => event.type === "game_end")) {
+    } else if (ending && ending.wasRunning) {
       clock.resume();
       requestWakeLock();
     }
@@ -191,8 +204,11 @@ bind({
     );
   },
   endGame() {
-    if (current().ended) return;
-    append("game_end");
+    const state = current();
+    if (!state.started || state.ended) return;
+    // Remember whether the clock was running, so undoing this does not
+    // restart a clock that was paused at halftime when the game ended.
+    append("game_end", { wasRunning: clock.isRunning() });
     clock.pause();
     releaseWakeLock();
     pendingSub = null;

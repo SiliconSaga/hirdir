@@ -29,7 +29,7 @@ Rosters name children. The only roster committed here is [`examples/example-team
 
 ## Quickstart
 
-Requires [uv](https://docs.astral.sh/uv/).
+Requires [uv](https://docs.astral.sh/uv/) for the workbook generator, and Node.js 20+ for the field app's tests (`node --test`, which `scripts/test.sh` and CI both run). The app itself needs no Node at runtime.
 
 ```bash
 uv sync                                        # create .venv and install

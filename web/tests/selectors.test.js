@@ -73,12 +73,12 @@ test("the proposed sub-off is whoever has been on longest", () => {
     roster,
     400,
   );
-  assert.equal(proposeSubOff(state, 400).id, "k1");
+  assert.equal(proposeSubOff(state).id, "k1");
 });
 
 test("proposing a sub-off with nobody on the field returns null", () => {
   const state = fold([ev(0, "game_start")], roster, 100);
-  assert.equal(proposeSubOff(state, 100), null);
+  assert.equal(proposeSubOff(state), null);
 });
 
 test("fair share matches the workbook: 30 min x 4 per side / 4 kids = 30 min", () => {

@@ -7,9 +7,10 @@ const HEADER = "Player,Jersey,Here,Minutes played,+/- fair,Goals,Star,Shy,Needs 
 const cell = (value) => {
   if (value === null || value === undefined) return "";
   let text = String(value);
-  // A name or note starting = + - @ is read as a formula by spreadsheets.
-  // Numbers stay numeric, so a negative ± fair is unaffected.
-  if (typeof value === "string" && /^[=+\-@]/.test(text)) text = `'${text}`;
+  // A name or note starting = + - @ is read as a formula by spreadsheets, and
+  // a leading tab/CR/LF can smuggle one past that check. Numbers stay numeric,
+  // so a negative ± fair is unaffected.
+  if (typeof value === "string" && /^[=+\-@\t\r\n]/.test(text)) text = `'${text}`;
   return /[",\n]/.test(text) ? `"${text.replaceAll('"', '""')}"` : text;
 };
 
