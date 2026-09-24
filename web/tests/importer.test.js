@@ -65,6 +65,21 @@ test("players sharing a birthdate keep their listed order, as the workbook does"
   );
 });
 
+test("a birthdate that is not a real YYYY-MM-DD date is rejected, as Python does", () => {
+  for (const bad of ["2021-13-45", "not-a-date", "2021/06/17", "06-17-2021", "2021-02-30"]) {
+    assert.throws(
+      () => importTeam({ team: "T", players: [{ name: "Ada", dob: bad }] }),
+      /not a YYYY-MM-DD date/,
+      `expected ${bad} to be rejected`,
+    );
+  }
+});
+
+test("a leap day is a real date and survives", () => {
+  const team = importTeam({ team: "T", players: [{ name: "Ada", dob: "2020-02-29" }] });
+  assert.equal(team.roster[0].name, "Ada");
+});
+
 test("a nonsense players-per-side is rejected rather than poisoning fair share", () => {
   for (const bad of ["lots", 0, -2, 2.5, {}, true, [], ["3"]]) {
     assert.throws(

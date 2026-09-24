@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { createStorage } from "../src/storage.js";
+import { browserBacking, createStorage } from "../src/storage.js";
 
 function memoryBacking() {
   const map = new Map();
@@ -11,7 +11,14 @@ function memoryBacking() {
   };
 }
 
-const doc = { v: 1, team: "LK", onFieldTarget: 5, roster: [], game: {}, clock: {}, events: [] };
+const doc = {
+  v: 1,
+  team: "LK",
+  onFieldTarget: 5,
+  roster: [{ id: "k1", name: "Ada", jersey: null }],
+  clock: {},
+  events: [{ seq: 1, t: 0, type: "game_start" }],
+};
 
 test("a saved document round-trips", () => {
   const storage = createStorage(memoryBacking());
@@ -49,6 +56,33 @@ test("a backing that throws on write does not take the app down", () => {
   });
   assert.doesNotThrow(() => storage.save(doc));
   assert.equal(storage.load(), null);
+});
+
+test("a document that no longer looks like one is ignored", () => {
+  for (const broken of [
+    { ...doc, roster: "everyone" },
+    { ...doc, roster: [{ id: "k1" }] },
+    { ...doc, events: [{ type: "sub_in" }] }, // no clock time
+    { ...doc, onFieldTarget: 0 },
+    { ...doc, onFieldTarget: "four" },
+    { v: 1 },
+  ]) {
+    const backing = memoryBacking();
+    backing.setItem("hirdir.game", JSON.stringify(broken));
+    assert.equal(createStorage(backing).load(), null, JSON.stringify(broken).slice(0, 60));
+  }
+});
+
+test("a localStorage that throws on access still yields a working store", () => {
+  const hostile = {
+    get localStorage() {
+      throw new Error("site data blocked");
+    },
+  };
+  const backing = browserBacking(hostile);
+  const storage = createStorage(backing);
+  assert.doesNotThrow(() => storage.save(doc));
+  assert.deepEqual(storage.load(), doc); // the in-memory fallback still works
 });
 
 test("clear removes the document", () => {

@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { createClock } from "../src/clock.js";
+import { createClock, MAX_GAME_SECONDS, overran, suggestedEnd } from "../src/clock.js";
 
 function fakeNow(start = 0) {
   let value = start;
@@ -45,6 +45,30 @@ test("a restored clock keeps its accumulated time", () => {
   now.advance(15);
   assert.equal(restored.elapsed(), 60);
   assert.equal(restored.isRunning(), true);
+});
+
+test("a game is flagged only once it runs past the cap", () => {
+  assert.equal(overran(90 * 60), false); // a long session is still plausible
+  assert.equal(overran(MAX_GAME_SECONDS), false);
+  assert.equal(overran(MAX_GAME_SECONDS + 1), true);
+  assert.equal(overran(14 * 60 * 60), true); // left running overnight
+});
+
+test("the suggested end time is the last recorded event plus a grace", () => {
+  const events = [
+    { t: 0, type: "game_start" },
+    { t: 2280, type: "sub_in", kid: "k1" }, // 38 minutes
+  ];
+  assert.equal(suggestedEnd(events, 14 * 60 * 60), 2280 + 300); // 43 minutes
+});
+
+test("the suggestion never exceeds the clock actually run", () => {
+  const events = [{ t: 100, type: "goal", kid: "k1" }];
+  assert.equal(suggestedEnd(events, 200), 200);
+});
+
+test("a game with nothing recorded suggests the grace itself", () => {
+  assert.equal(suggestedEnd([], 9999), 300);
 });
 
 test("pause is idempotent and resume on a fresh clock does not rewind", () => {

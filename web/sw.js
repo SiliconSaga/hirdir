@@ -42,9 +42,21 @@ self.addEventListener("activate", (event) => {
   );
 });
 
+// Stale-while-revalidate: answer from cache so a dead signal at the field
+// changes nothing, but fetch in the background so a deploy actually lands —
+// cache-first alone would serve the same shell forever under a fixed name.
 self.addEventListener("fetch", (event) => {
   if (event.request.method !== "GET") return;
   event.respondWith(
-    caches.match(event.request).then((hit) => hit ?? fetch(event.request)),
+    caches.open(CACHE).then(async (cache) => {
+      const hit = await cache.match(event.request);
+      const fresh = fetch(event.request)
+        .then((response) => {
+          if (response.ok) cache.put(event.request, response.clone());
+          return response;
+        })
+        .catch(() => hit); // offline: the cached copy is the answer
+      return hit ?? fresh;
+    }),
   );
 });

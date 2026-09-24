@@ -1,16 +1,16 @@
 // Bootstrap: the only module that touches window — clock, storage, wake lock, tick.
 
-import { createClock } from "./clock.js";
+import { createClock, overran, suggestedEnd } from "./clock.js";
 import { createLog } from "./log.js";
 import { fold } from "./fold.js";
 import { proposeSubOff } from "./selectors.js";
 import { buildView } from "./viewmodel.js";
-import { createStorage } from "./storage.js";
+import { browserBacking, createStorage } from "./storage.js";
 import { importTeam } from "./importer.js";
 import { toCsv, toJson } from "./exporter.js";
 import { bind, openRollCall, render, showText } from "./ui.js";
 
-const storage = createStorage(window.localStorage);
+const storage = createStorage(browserBacking(window));
 const saved = storage.load();
 let team = saved ?? { team: "", onFieldTarget: 4, roster: [], events: [], clock: null };
 let log = createLog(team.events ?? []);
@@ -47,12 +47,13 @@ function append(type, fields = {}, group = null) {
 
 // The game has started when the log says so — not when the log is merely
 // non-empty, since marking someone absent before kickoff is an event too.
+// Only kicks off a game that has not started. A paused clock stays paused:
+// subbing someone during halftime should not quietly restart it.
 function startGame() {
-  if (!current().started) log.append("game_start", {}, now());
-  if (!clock.isRunning()) {
-    clock.start();
-    requestWakeLock();
-  }
+  if (current().started) return;
+  log.append("game_start", {}, now());
+  clock.start();
+  requestWakeLock();
 }
 
 // The request is async, so a pause can land while it is in flight. The
@@ -153,6 +154,11 @@ bind({
       releaseWakeLock();
       persist();
       draw();
+    } else if (current().started) {
+      clock.resume(); // an explicit tap on the clock is the way to unpause
+      requestWakeLock();
+      persist();
+      draw();
     } else {
       startGame();
       persist();
@@ -224,6 +230,7 @@ bind({
     }
     try {
       const parsed = importTeam(JSON.parse(await file.text()));
+      releaseWakeLock(); // the old game is gone; its screen lock goes with it
       team = { ...parsed, events: [], clock: null };
       log = createLog([]);
       clock = createClock(() => Date.now(), null);
@@ -235,6 +242,44 @@ bind({
     }
   },
 });
+
+// A game left running — the coach forgot the whistle and the page sat there,
+// or was closed, since the clock is anchored to wall time. Stop it before the
+// first render, and ask; the log is only ever changed by the answer.
+function checkForForgottenGame() {
+  const state = current();
+  if (!state.started || state.ended || !overran(now())) return;
+  clock.pause();
+  releaseWakeLock();
+  persist();
+
+  const suggestion = suggestedEnd(log.events, now());
+  const asMinutes = Math.round(suggestion / 60);
+  const ran = Math.round(now() / 3600);
+  const answer = window.prompt(
+    `This game has been running for about ${ran} hours — it looks like it never got ended.\n\n` +
+      `The last thing recorded was at ${Math.round((log.events.at(-1)?.t ?? 0) / 60)} minutes. ` +
+      `End it at minute ${asMinutes}?\n\n` +
+      `Enter a minute, or cancel to leave the game open.`,
+    String(asMinutes),
+  );
+  if (answer === null) return; // left open on purpose
+  const minute = Number(answer);
+  if (!Number.isFinite(minute) || minute < 0) return;
+  log.append("game_end", { wasRunning: false, reconstructed: true }, minute * 60);
+  persist();
+}
+
+checkForForgottenGame();
+
+// The browser drops a wake lock whenever the page is hidden, so coming back
+// to a running game has to ask for it again.
+document.addEventListener("visibilitychange", () => {
+  if (document.visibilityState !== "visible") return;
+  if (clock.isRunning() && !current().ended) requestWakeLock();
+});
+
+if (clock.isRunning() && !current().ended) requestWakeLock();
 
 setInterval(draw, 1000);
 draw();

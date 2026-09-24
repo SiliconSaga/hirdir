@@ -63,14 +63,39 @@ function kidRow(kid, { onField }) {
   return li;
 }
 
+// A row only needs rebuilding when something structural changed. Ticking the
+// clock must not replace elements under a thumb that is mid-tap.
+function shapeOf(rows, onField) {
+  return rows
+    .map((kid) => [kid.id, kid.jersey, kid.goals, kid.flags.join("+"), onField ? "" : kid.owed].join(":"))
+    .join("|");
+}
+
+const lastShape = { "on-field": null, bench: null, away: null };
+
+function paintList(id, rows, onField) {
+  const shape = shapeOf(rows, onField);
+  const list = $(id);
+  if (lastShape[id] === shape && list.children.length === rows.length) {
+    // Same players in the same order: just move the numbers on.
+    rows.forEach((kid, index) => {
+      const meta = list.children[index].querySelector(".meta");
+      if (meta) meta.textContent = onField ? kid.stint : `${kid.deficit} min`;
+    });
+    return;
+  }
+  lastShape[id] = shape;
+  list.replaceChildren(...rows.map((kid) => kidRow(kid, { onField })));
+}
+
 export function render(view) {
   $("clock").textContent = view.clock;
   $("clock-toggle").textContent = view.running ? "Pause" : "Start";
   $("count").textContent = view.countLabel;
   $("count").classList.toggle("warn", view.countWarning);
 
-  $("on-field").replaceChildren(...view.onField.map((kid) => kidRow(kid, { onField: true })));
-  $("bench").replaceChildren(...view.bench.map((kid) => kidRow(kid, { onField: false })));
+  paintList("on-field", view.onField, true);
+  paintList("bench", view.bench, false);
 
   $("away-section").hidden = view.away.length === 0;
   $("away").replaceChildren(

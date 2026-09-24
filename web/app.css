@@ -45,7 +45,8 @@ header {
   gap: 12px;
   padding: 8px 0;
   position: sticky;
-  top: 0;
+  /* Clear the notch: at top 0 the clock hides under the status bar. */
+  top: env(safe-area-inset-top, 0px);
   background: var(--bg);
   border-bottom: 2px solid var(--line);
   z-index: 2;
