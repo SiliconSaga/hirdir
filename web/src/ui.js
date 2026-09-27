@@ -19,9 +19,10 @@ function markButton(action, label, { set = null, aria = null } = {}) {
 // leaves them. ± fair slides every second — the share it is measured against
 // grows with the clock — so the plain minutes anchor it.
 function metaLine(kid, onField) {
-  return onField
-    ? `${kid.stint} on · ${kid.minutes} min`
-    : `${kid.minutes} min · ${kid.deficit} vs fair`;
+  if (onField) return `${kid.stint} on · ${kid.minutes} min`;
+  return kid.owedMinutes
+    ? `${kid.minutes} min · owed ${kid.owedMinutes}`
+    : `${kid.minutes} min`;
 }
 
 function kidRow(kid, { onField }) {
@@ -178,7 +179,10 @@ export function bind(handlers) {
       handlers.kidAction(row.dataset.kid, button.dataset.action);
     });
   }
-  $("help-open").addEventListener("click", () => $("help").showModal());
+  $("help-open").addEventListener("click", () => {
+    $("help").showModal();
+    $("help-title").focus(); // open at the top, not at the first button
+  });
   $("help-close").addEventListener("click", () => $("help").close());
   $("clock-toggle").addEventListener("click", handlers.toggleClock);
   $("pending-confirm").addEventListener("click", handlers.confirmSub);

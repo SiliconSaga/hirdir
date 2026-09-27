@@ -17,8 +17,8 @@
       <button id="help-open" aria-label="How this works">?</button>
     </header>
 
-    <dialog id="help">
-      <h2>How this works</h2>
+    <dialog id="help" aria-labelledby="help-title">
+      <h2 id="help-title" tabindex="-1">How this works</h2>
       <p><strong>Getting going.</strong> Open "Setup and export" and load your team file. Tap a kid on the bench to put them on the field — the clock starts with the first one.</p>
       <p><strong>Subbing.</strong> While there's room, a tap puts a kid straight on. Once the field is full, tapping a bench kid asks who comes off, already suggesting whoever has been on longest. Tap a different name on the field to swap someone else out instead.</p>
       <p><strong>If you lose track</strong> — and you will — tap <strong>Roll call</strong> and tap everyone who is actually out there. That becomes the truth; nobody loses their minutes.</p>
@@ -36,7 +36,8 @@
 
       <h3>The numbers</h3>
       <p><strong>On the field:</strong> how long this stint has run, then total minutes today.</p>
-      <p><strong>On the bench:</strong> total minutes today, then how that compares to an even share. <strong>It moves on its own</strong> — the fair share grows as the game runs, so a kid sitting out slides from +1 to 0 to −2 without you touching anything. Red means they're owed time.</p>
+      <p><strong>On the bench:</strong> total minutes today, plus "owed 2" once a kid is a minute or more behind an even share. The owed figure grows the longer they sit, and the bench is sorted by it — so the kid at the top is always the one to send on next. Red says the same thing louder.</p>
+      <p class="hint">An even share is the game so far × players per side ÷ kids here. It grows every second, which is why a kid who has just come off shows no figure and picks one up after a minute on the bench.</p>
       <p><strong>5/5</strong> in the corner is who's on versus how many you play. If it turns red, the app thinks a different number is out there than you do — roll call fixes it.</p>
 
       <h3>Ending up</h3>
