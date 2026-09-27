@@ -29,7 +29,7 @@ Rosters name children. The only roster committed here is [`examples/example-team
 
 ## Quickstart
 
-Requires [uv](https://docs.astral.sh/uv/).
+Requires [uv](https://docs.astral.sh/uv/) for the workbook generator, and Node.js 20+ for the field app's tests (`node --test`, which `scripts/test.sh` and CI both run). The app itself needs no Node at runtime.
 
 ```bash
 uv sync                                        # create .venv and install
@@ -87,10 +87,26 @@ If you already know a kid will miss the next game, type `A` in that game's sheet
 
 `± fair` compares a kid's minutes against an even split — game length × players per side ÷ kids present. Red means they are owed time next week.
 
+## Phase 1: the field app
+
+`web/` is a single static page — no backend, no framework, no build step — that keeps the ledger during a game so the paper doesn't have to. It publishes to this repo's GitHub Pages on every push to `main`, and installs to a phone's home screen.
+
+- **Everything stays in your browser.** No account, and nothing about the team is ever sent anywhere — the only network use is fetching the page itself, which the service worker then caches. Clearing site data clears the game.
+- **Import** the same team config `hirdir build` reads, from *Setup and export*.
+- **During a game:** tap a bench kid to send them on. While there is room on the field nobody comes off; once it's full, the app proposes the kid who has been on longest, and you can tap any other on-field name instead. **Undo** reverses the last action. **Roll call** re-states who is actually on the field when reality has drifted.
+- The bench is sorted by **who is owed the most time**, with each kid's deficit against a fair share, so "who's next?" needs no arithmetic.
+- **Export** writes a CSV whose columns match the workbook's game sheet, plus the raw event log as JSON.
+- **Offline:** a service worker caches the app shell, so a dead signal at the field changes nothing.
+- **Wet screens** are a physical problem, not a software one — capacitive touch misreads water. Big targets and undo soften it; a sandwich bag or a cheap waterproof pouch actually solves it.
+
+Run it locally with a static server — `python3 -m http.server 8000 --directory web`, then open <http://localhost:8000>. Opening `web/index.html` straight from disk does **not** work: browsers block ES modules over `file://` as a cross-origin request, so the page renders but no script runs. (The service worker is skipped outside http(s) regardless.)
+
 ## Development
 
 ```bash
-uv run pytest                  # or: ws test hirdir
+uv run pytest                  # Python only
+node --test web/tests          # JavaScript only
+bash scripts/test.sh           # both — this is what `ws test hirdir` runs
 uv run ruff check src tests    # or: ws lint hirdir
 uv run ruff format src tests   # or: ws format hirdir
 ```

@@ -12,7 +12,7 @@
 
 ## Global Constraints
 
-- **No build step, no bundler, no framework, no CDN.** Vendored assets only; the page must open from `file://` and from GitHub Pages identically.
+- **No build step, no bundler, no framework, no CDN.** Vendored assets only. Note the page needs an http(s) origin even locally: browsers block ES modules over `file://` as cross-origin, so `python3 -m http.server` is the minimum to run it.
 - **No network calls anywhere in Phase 1.** No analytics, no fonts, no API. The voice endpoint is Phase 1.5 and out of scope here.
 - **Event log schema version is `1`** and every persisted document carries `"v": 1`.
 - **Clock time `t` is integer seconds of running game clock**, never wall clock. A pause must not advance `t`.
@@ -1865,7 +1865,7 @@ Run: `ws commit hirdir .commits/hirdir-web-wiring.md`
 
 - [ ] **Step 2: Write the service worker**
 
-`sw.js` caches the app shell (`index.html`, `app.css`, `src/*.js`, `manifest.webmanifest`) on `install` under a versioned cache name, serves cache-first on `fetch`, and deletes older caches on `activate`. Register it from `main.js` behind `if ("serviceWorker" in navigator)`, and **only when the page is served over http(s)** so `file://` still works.
+`sw.js` caches the app shell (`index.html`, `app.css`, `src/*.js`, `manifest.webmanifest`) on `install` under a versioned cache name, serves cache-first on `fetch`, and deletes older caches on `activate`. Register it from `main.js` behind `if ("serviceWorker" in navigator)`, and **only when the page is served over http(s)**, so a non-http origin raises no error.
 
 - [ ] **Step 3: Verify offline**
 
@@ -1893,7 +1893,7 @@ add:
   - README.md
 ---
 
-The service worker registers only over http(s), so opening index.html straight from disk keeps working — which is how it gets tested fastest.
+The service worker registers only over http(s), so a non-http origin raises no error.
 ```
 
 Run: `ws commit hirdir .commits/hirdir-web-publish.md`, then `ws push hirdir main`, then enable Pages for the repo (Settings → Pages → Source: GitHub Actions) if the first run reports it is disabled.
