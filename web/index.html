@@ -14,7 +14,37 @@
       <div id="clock">0:00</div>
       <button id="clock-toggle" class="big">Start</button>
       <div id="count" aria-live="polite">0/4</div>
+      <button id="help-open" aria-label="How this works">?</button>
     </header>
+
+    <dialog id="help">
+      <h2>How this works</h2>
+      <p><strong>Getting going.</strong> Open "Setup and export" and load your team file. Tap a kid on the bench to put them on the field — the clock starts with the first one.</p>
+      <p><strong>Subbing.</strong> While there's room, a tap puts a kid straight on. Once the field is full, tapping a bench kid asks who comes off, already suggesting whoever has been on longest. Tap a different name on the field to swap someone else out instead.</p>
+      <p><strong>If you lose track</strong> — and you will — tap <strong>Roll call</strong> and tap everyone who is actually out there. That becomes the truth; nobody loses their minutes.</p>
+      <p><strong>Undo</strong> takes back the last thing you did, a whole substitution included.</p>
+
+      <h3>The buttons on a kid's row</h3>
+      <dl class="legend">
+        <dt>⚽</dt><dd>Scored a goal. The number beside it is their tally.</dd>
+        <dt>★</dt><dd>Doing great — you can spend your attention elsewhere.</dd>
+        <dt>shy</dt><dd>Hanging back, needs drawing in.</dd>
+        <dt>help</dt><dd>Struggling, needs you.</dd>
+        <dt>away</dt><dd>Not here today. They drop out of the fair-share maths and move to "Away today", where a tap brings them back if they turn up late.</dd>
+      </dl>
+      <p class="hint">★, shy and help are toggles — tap again to clear. They're notes to yourself for next season's team-picking, not a judgement on anyone.</p>
+
+      <h3>The numbers</h3>
+      <p><strong>On the field:</strong> how long this stint has run, then total minutes today.</p>
+      <p><strong>On the bench:</strong> total minutes today, then how that compares to an even share. <strong>It moves on its own</strong> — the fair share grows as the game runs, so a kid sitting out slides from +1 to 0 to −2 without you touching anything. Red means they're owed time.</p>
+      <p><strong>5/5</strong> in the corner is who's on versus how many you play. If it turns red, the app thinks a different number is out there than you do — roll call fixes it.</p>
+
+      <h3>Ending up</h3>
+      <p>Pause is halftime; nobody accrues time while it's paused. At full time, "End game", then <strong>Export game</strong> before you close the tab — that's the record.</p>
+      <p class="hint">Everything stays on this phone. Nothing about the kids is sent anywhere.</p>
+
+      <button id="help-close" class="big primary">Got it</button>
+    </dialog>
 
     <p id="storage-warning" class="hint warn" hidden>
       This browser won't let the app save. The game works, but reloading or

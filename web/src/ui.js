@@ -15,6 +15,15 @@ function markButton(action, label, { set = null, aria = null } = {}) {
   return button;
 }
 
+// Both questions on one line: how much has this kid had, and where that
+// leaves them. ± fair slides every second — the share it is measured against
+// grows with the clock — so the plain minutes anchor it.
+function metaLine(kid, onField) {
+  return onField
+    ? `${kid.stint} on · ${kid.minutes} min`
+    : `${kid.minutes} min · ${kid.deficit} vs fair`;
+}
+
 function kidRow(kid, { onField }) {
   const li = document.createElement("li");
   li.className = onField ? "kid" : kid.owed ? "kid owed" : "kid";
@@ -34,7 +43,7 @@ function kidRow(kid, { onField }) {
   who.className = "who";
   for (const [className, text] of [
     ["name", kid.name],
-    ["meta", onField ? kid.stint : `${kid.deficit} min`],
+    ["meta", metaLine(kid, onField)],
   ]) {
     const span = document.createElement("span");
     span.className = className;
@@ -50,7 +59,7 @@ function kidRow(kid, { onField }) {
   marks.append(
     onField
       ? markButton("goal", `⚽${kid.goals || ""}`, { aria: `Goal for ${kid.name}` })
-      : markButton("absent", "A", { aria: `${kid.name} is not here today` }),
+      : markButton("away", "away", { aria: `${kid.name} is not here today` }),
     markButton("star", "★", { set: kid.flags.includes("star"), aria: `Doing great: ${kid.name}` }),
     markButton("shy", "shy", { set: kid.flags.includes("shy"), aria: `Shy: ${kid.name}` }),
     markButton("help", "help", {
@@ -82,7 +91,7 @@ function paintList(id, rows, onField) {
     // Same players in the same order: just move the numbers on.
     rows.forEach((kid, index) => {
       const meta = list.children[index].querySelector(".meta");
-      if (meta) meta.textContent = onField ? kid.stint : `${kid.deficit} min`;
+      if (meta) meta.textContent = metaLine(kid, onField);
     });
     return;
   }
@@ -169,6 +178,8 @@ export function bind(handlers) {
       handlers.kidAction(row.dataset.kid, button.dataset.action);
     });
   }
+  $("help-open").addEventListener("click", () => $("help").showModal());
+  $("help-close").addEventListener("click", () => $("help").close());
   $("clock-toggle").addEventListener("click", handlers.toggleClock);
   $("pending-confirm").addEventListener("click", handlers.confirmSub);
   $("pending-cancel").addEventListener("click", handlers.cancelSub);

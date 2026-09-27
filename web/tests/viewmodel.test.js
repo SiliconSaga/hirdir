@@ -107,6 +107,7 @@ test("rows carry goals and flags so the row can show them", () => {
     logSize: 4,
   });
   assert.equal(view.onField[0].goals, 1);
+  assert.equal(view.onField[0].minutes, 1); // 60 seconds on the field
   assert.deepEqual(
     view.bench.find((k) => k.id === "k2").flags,
     ["shy"],

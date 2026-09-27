@@ -39,6 +39,7 @@ export function buildView(
       jersey: kid.jersey,
       goals: kid.goals,
       flags: [...kid.flags],
+      minutes: Math.round(kid.seconds / 60),
       stint: formatMmSs(clockSeconds - (kid.stintStart ?? clockSeconds)),
     })),
     bench: benchOrder(state, fair).map((kid) => ({
@@ -47,6 +48,7 @@ export function buildView(
       jersey: kid.jersey,
       goals: kid.goals,
       flags: [...kid.flags],
+      minutes: Math.round(kid.seconds / 60),
       deficit: signedMinutes(deficit(kid, fair)),
       // A full minute behind, so the highlight matches the number on the row.
       owed: deficit(kid, fair) <= -60,

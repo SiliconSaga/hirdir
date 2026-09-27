@@ -68,6 +68,27 @@ header {
 
 #count.warn { color: var(--owed); }
 
+#help-open {
+  min-width: 44px;
+  min-height: 44px;
+  font-size: 1.3rem;
+  font-weight: 700;
+  color: var(--muted);
+  background: var(--bg);
+  border: 2px solid var(--line);
+  border-radius: 50%;
+}
+
+#help h2 { margin-top: 0; font-size: 1.3rem; color: var(--green); }
+#help h3 { margin: 18px 0 6px; font-size: 1rem; color: var(--green); }
+#help p { margin: 8px 0; }
+
+.legend { display: grid; grid-template-columns: auto 1fr; gap: 6px 12px; margin: 6px 0; }
+.legend dt { font-weight: 700; text-align: center; }
+.legend dd { margin: 0; }
+
+#help .big { margin-top: 18px; width: 100%; }
+
 h2 {
   font-size: 0.95rem;
   text-transform: uppercase;
@@ -224,6 +245,9 @@ textarea {
 
 dialog {
   width: min(92vw, 520px);
+  max-height: 85vh;
+  overflow: auto;
+  overscroll-behavior: contain;
   color: var(--fg);
   background: var(--bg);
   border: 2px solid var(--line);

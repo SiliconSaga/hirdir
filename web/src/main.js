@@ -112,7 +112,9 @@ function kidAction(kidId, action) {
     }
   } else if (action === "goal") {
     append("goal", { kid: kidId });
-  } else if (action === "absent") {
+  } else if (action === "away") {
+    // The button says "away"; the event stays "absent", which is what the
+    // fold, the export and the workbook's Here column already speak.
     append("absent", { kid: kidId });
   } else {
     append("flag", { kid: kidId, flag: action });
