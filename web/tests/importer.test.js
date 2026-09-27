@@ -66,7 +66,7 @@ test("players sharing a birthdate keep their listed order, as the workbook does"
 });
 
 test("a birthdate that is not a real YYYY-MM-DD date is rejected, as Python does", () => {
-  for (const bad of ["2021-13-45", "not-a-date", "2021/06/17", "06-17-2021", "2021-02-30"]) {
+  for (const bad of ["2021-13-45", "not-a-date", "2021/06/17", "06-17-2021", "2021-02-30", "0000-01-01"]) {
     assert.throws(
       () => importTeam({ team: "T", players: [{ name: "Ada", dob: bad }] }),
       /not a YYYY-MM-DD date/,

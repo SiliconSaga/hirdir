@@ -13,8 +13,11 @@ export function browserBacking(win) {
     store.getItem(KEY); // touch it: the throw happens here, not at import
     return store;
   } catch {
+    // Volatile: the game survives a tap but not a reload. The coach has to be
+    // told, or they lose a game's worth of minutes without ever seeing why.
     const memory = new Map();
     return {
+      volatile: true,
       getItem: (k) => (memory.has(k) ? memory.get(k) : null),
       setItem: (k, v) => memory.set(k, v),
       removeItem: (k) => memory.delete(k),

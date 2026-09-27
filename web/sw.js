@@ -51,12 +51,15 @@ self.addEventListener("fetch", (event) => {
     caches.open(CACHE).then(async (cache) => {
       const hit = await cache.match(event.request);
       const fresh = fetch(event.request)
-        .then((response) => {
-          if (response.ok) cache.put(event.request, response.clone());
+        .then(async (response) => {
+          // Await the write: the event can end before a floating promise runs.
+          if (response.ok) await cache.put(event.request, response.clone());
           return response;
         })
         .catch(() => hit); // offline: the cached copy is the answer
-      return hit ?? fresh;
+      if (!hit) return fresh;
+      event.waitUntil(fresh); // keep the refresh alive past the response
+      return hit;
     }),
   );
 });

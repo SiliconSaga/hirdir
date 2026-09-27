@@ -12,7 +12,8 @@ const ISO_DATE = /^\d{4}-\d{2}-\d{2}$/;
 function birthdate(value, who) {
   if (value === undefined || value === null || value === "") return null;
   const text = String(value);
-  const parsed = ISO_DATE.test(text) ? new Date(`${text}T00:00:00Z`) : null;
+  // Year 0000 parses but is not a date Python's fromisoformat accepts.
+  const parsed = ISO_DATE.test(text) && !text.startsWith("0000") ? new Date(`${text}T00:00:00Z`) : null;
   if (!parsed || Number.isNaN(parsed.getTime()) || !text.startsWith(parsed.toISOString().slice(0, 10))) {
     throw new ImportError(`${who}: '${text}' is not a YYYY-MM-DD date.`);
   }

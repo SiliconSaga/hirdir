@@ -10,7 +10,9 @@ import { importTeam } from "./importer.js";
 import { toCsv, toJson } from "./exporter.js";
 import { bind, openRollCall, render, showText } from "./ui.js";
 
-const storage = createStorage(browserBacking(window));
+const backing = browserBacking(window);
+const storage = createStorage(backing);
+if (backing.volatile) document.getElementById("storage-warning").hidden = false;
 const saved = storage.load();
 let team = saved ?? { team: "", onFieldTarget: 4, roster: [], events: [], clock: null };
 let log = createLog(team.events ?? []);
@@ -265,8 +267,14 @@ function checkForForgottenGame() {
   );
   if (answer === null) return; // left open on purpose
   const minute = Number(answer);
-  if (!Number.isFinite(minute) || minute < 0) return;
-  log.append("game_end", { wasRunning: false, reconstructed: true }, minute * 60);
+  const seconds = Math.round(minute * 60);
+  const lastRecorded = log.events.at(-1)?.t ?? 0;
+  // A game cannot end before the last thing that happened in it, nor after
+  // the clock actually ran. Out of range means the answer was a typo.
+  if (!Number.isFinite(seconds) || seconds < lastRecorded || seconds > now()) return;
+  log.append("game_end", { wasRunning: false, reconstructed: true }, seconds);
+  // Wind the clock back to the chosen end, so the screen and the log agree.
+  clock = createClock(() => Date.now(), { accumulatedMs: seconds * 1000, runningSince: null });
   persist();
 }
 

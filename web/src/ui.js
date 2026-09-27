@@ -67,7 +67,9 @@ function kidRow(kid, { onField }) {
 // clock must not replace elements under a thumb that is mid-tap.
 function shapeOf(rows, onField) {
   return rows
-    .map((kid) => [kid.id, kid.jersey, kid.goals, kid.flags.join("+"), onField ? "" : kid.owed].join(":"))
+    .map((kid) =>
+      [kid.id, kid.name, kid.jersey, kid.goals, kid.flags.join("+"), onField ? "" : kid.owed].join(":"),
+    )
     .join("|");
 }
 
