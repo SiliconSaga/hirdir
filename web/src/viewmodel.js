@@ -39,6 +39,7 @@ export function buildView(
       jersey: kid.jersey,
       goals: kid.goals,
       flags: [...kid.flags],
+      minutes: Math.round(kid.seconds / 60),
       stint: formatMmSs(clockSeconds - (kid.stintStart ?? clockSeconds)),
     })),
     bench: benchOrder(state, fair).map((kid) => ({
@@ -47,9 +48,14 @@ export function buildView(
       jersey: kid.jersey,
       goals: kid.goals,
       flags: [...kid.flags],
+      minutes: Math.round(kid.seconds / 60),
       deficit: signedMinutes(deficit(kid, fair)),
-      // A full minute behind, so the highlight matches the number on the row.
+      // Only a kid who is owed a full minute or more gets a ± on the row.
+      // A "+1" that decays to "0" within seconds reads like a glitch, and
+      // nobody subs anyone on because they are one minute ahead — the bench
+      // order already carries that. The highlight matches the same threshold.
       owed: deficit(kid, fair) <= -60,
+      owedMinutes: deficit(kid, fair) <= -60 ? Math.round(-deficit(kid, fair) / 60) : null,
     })),
     // Kids marked absent leave both lists, so they need somewhere to live or
     // there is no way back from a mis-tapped "A".

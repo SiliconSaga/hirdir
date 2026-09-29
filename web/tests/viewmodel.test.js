@@ -48,6 +48,21 @@ test("bench rows show whole-minute deficits, most owed first", () => {
   assert.equal(view.bench[0].owed, true);
 });
 
+test("a kid only carries an owed figure once they are a minute behind", () => {
+  const state = fold([ev(0, "game_start"), ev(0, "sub_in", { kid: "k1" })], roster, 600);
+  const view = buildView(state, { clockSeconds: 600, onFieldTarget: 1, pendingSub: null });
+  // fair share = 600 x 1 / 3 = 200s, so the bench is 200s behind
+  const benched = view.bench[0];
+  assert.equal(benched.owed, true);
+  assert.equal(benched.owedMinutes, 3);
+
+  // The kid on the field is ahead; being ahead is not something to show.
+  const early = fold([ev(0, "game_start"), ev(0, "sub_in", { kid: "k1" })], roster, 30);
+  const soon = buildView(early, { clockSeconds: 30, onFieldTarget: 1, pendingSub: null });
+  assert.equal(soon.bench[0].owedMinutes, null); // 10s behind: not worth saying
+  assert.equal(soon.bench[0].owed, false);
+});
+
 test("a pending sub names both kids", () => {
   const state = fold([ev(0, "game_start"), ev(0, "sub_in", { kid: "k1" })], roster, 300);
   const view = buildView(state, {
@@ -107,6 +122,8 @@ test("rows carry goals and flags so the row can show them", () => {
     logSize: 4,
   });
   assert.equal(view.onField[0].goals, 1);
+  assert.equal(view.onField[0].minutes, 1); // 60 seconds on the field
+  assert.equal(view.bench.find((k) => k.id === "k2").minutes, 0); // never played
   assert.deepEqual(
     view.bench.find((k) => k.id === "k2").flags,
     ["shy"],
