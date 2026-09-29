@@ -8,7 +8,7 @@ import { buildView } from "./viewmodel.js";
 import { browserBacking, createStorage } from "./storage.js";
 import { importTeam } from "./importer.js";
 import { toCsv, toJson } from "./exporter.js";
-import { bind, openRollCall, render, showText } from "./ui.js";
+import { bind, confirmImport, openRollCall, render, setImportStatus, showText } from "./ui.js";
 
 const backing = browserBacking(window);
 const storage = createStorage(backing);
@@ -227,23 +227,27 @@ bind({
   },
   exportGame,
   async importConfig(file) {
+    const load = async () => {
+      try {
+        const parsed = importTeam(JSON.parse(await file.text()));
+        releaseWakeLock(); // the old game is gone; its screen lock goes with it
+        team = { ...parsed, events: [], clock: null };
+        log = createLog([]);
+        clock = createClock(() => Date.now(), null);
+        pendingSub = null;
+        persist();
+        draw();
+        // Say so: a file picker that closes with nothing visibly different
+        // is indistinguishable from a failure.
+        setImportStatus(`Loaded ${parsed.team} — ${parsed.roster.length} players.`);
+      } catch (error) {
+        setImportStatus(`Could not read that file: ${error.message}`);
+      }
+    };
     // Importing wipes the game, and the file picker is one tap from the
-    // export button — so a game in progress asks first.
-    if (log.size() && !window.confirm("Load a new team? This clears the game in progress.")) {
-      return;
-    }
-    try {
-      const parsed = importTeam(JSON.parse(await file.text()));
-      releaseWakeLock(); // the old game is gone; its screen lock goes with it
-      team = { ...parsed, events: [], clock: null };
-      log = createLog([]);
-      clock = createClock(() => Date.now(), null);
-      pendingSub = null;
-      persist();
-      draw();
-    } catch (error) {
-      showText(`Could not read that config: ${error.message}`);
-    }
+    // export button — so a game in progress asks first, in-page.
+    if (log.size()) confirmImport(load);
+    else await load();
   },
 });
 
