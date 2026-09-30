@@ -196,6 +196,7 @@ export function bind(handlers) {
     box.value = "";
   });
   $("export").addEventListener("click", handlers.exportGame);
+  $("load-example").addEventListener("click", handlers.loadExample);
   $("import-file").addEventListener("change", (event) => {
     const [file] = event.target.files;
     // Clear the input: without this, picking the same file again fires no
@@ -218,10 +219,14 @@ export function confirmImport(onYes) {
     dialog.close();
     onYes();
   };
+  const declined = () => setImportStatus("Kept the game in progress.");
   $("import-confirm-no").onclick = () => {
     dialog.close();
-    setImportStatus("Kept the game in progress.");
+    declined();
   };
+  // Escape, or a platform back gesture, closes the dialog without either
+  // button — that is still a decline and should say so.
+  dialog.oncancel = declined;
   dialog.showModal();
   $("import-confirm-title").focus();
 }

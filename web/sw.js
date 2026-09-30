@@ -4,7 +4,10 @@
 // github.io serves every repo's Pages site from one origin, so only ever
 // delete caches this app owns.
 const CACHE_PREFIX = "hirdir-";
-const CACHE = `${CACHE_PREFIX}v1`;
+// v2: main.js gained imports from ui.js and a new example-team.js module.
+// Without a bump, an installed app can mix a refreshed main.js with a cached
+// ui.js that lacks those exports, and then fails to start at all.
+const CACHE = `${CACHE_PREFIX}v2`;
 const SHELL = [
   ".",
   "index.html",
@@ -19,6 +22,7 @@ const SHELL = [
   "src/clock.js",
   "src/storage.js",
   "src/importer.js",
+  "src/example-team.js",
   "src/exporter.js",
 ];
 

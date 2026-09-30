@@ -7,6 +7,7 @@ import { proposeSubOff } from "./selectors.js";
 import { buildView } from "./viewmodel.js";
 import { browserBacking, createStorage } from "./storage.js";
 import { importTeam } from "./importer.js";
+import { EXAMPLE_TEAM } from "./example-team.js";
 import { toCsv, toJson } from "./exporter.js";
 import { bind, confirmImport, openRollCall, render, setImportStatus, showText } from "./ui.js";
 
@@ -121,6 +122,32 @@ function kidAction(kidId, action) {
   }
 }
 
+// One route for every way a team arrives — a picked file, the example — so
+// the confirmation, the error handling and the feedback cannot drift apart.
+function loadTeam(readConfig) {
+  const apply = async () => {
+    try {
+      const parsed = importTeam(await readConfig());
+      releaseWakeLock(); // the old game is gone; its screen lock goes with it
+      team = { ...parsed, events: [], clock: null };
+      log = createLog([]);
+      clock = createClock(() => Date.now(), null);
+      pendingSub = null;
+      persist();
+      draw();
+      // Say so: a picker that closes with nothing visibly different is
+      // indistinguishable from a failure.
+      setImportStatus(`Loaded ${parsed.team} — ${parsed.roster.length} players.`);
+    } catch (error) {
+      setImportStatus(`Could not read that file: ${error.message}`);
+    }
+  };
+  // Loading a team wipes the game, and these controls sit one tap from the
+  // export button — so a game in progress asks first, in-page.
+  if (log.size()) confirmImport(apply);
+  else apply();
+}
+
 function exportGame() {
   const state = current();
   const csv = toCsv(state, now(), team.onFieldTarget);
@@ -226,29 +253,8 @@ bind({
     draw();
   },
   exportGame,
-  async importConfig(file) {
-    const load = async () => {
-      try {
-        const parsed = importTeam(JSON.parse(await file.text()));
-        releaseWakeLock(); // the old game is gone; its screen lock goes with it
-        team = { ...parsed, events: [], clock: null };
-        log = createLog([]);
-        clock = createClock(() => Date.now(), null);
-        pendingSub = null;
-        persist();
-        draw();
-        // Say so: a file picker that closes with nothing visibly different
-        // is indistinguishable from a failure.
-        setImportStatus(`Loaded ${parsed.team} — ${parsed.roster.length} players.`);
-      } catch (error) {
-        setImportStatus(`Could not read that file: ${error.message}`);
-      }
-    };
-    // Importing wipes the game, and the file picker is one tap from the
-    // export button — so a game in progress asks first, in-page.
-    if (log.size()) confirmImport(load);
-    else await load();
-  },
+  importConfig: (file) => loadTeam(async () => JSON.parse(await file.text())),
+  loadExample: () => loadTeam(async () => EXAMPLE_TEAM),
 });
 
 // A game left running — the coach forgot the whistle and the page sat there,
