@@ -196,10 +196,39 @@ export function bind(handlers) {
     box.value = "";
   });
   $("export").addEventListener("click", handlers.exportGame);
+  $("load-example").addEventListener("click", handlers.loadExample);
   $("import-file").addEventListener("change", (event) => {
     const [file] = event.target.files;
+    // Clear the input: without this, picking the same file again fires no
+    // change event at all, so a second attempt looks like nothing happened.
+    event.target.value = "";
     if (file) handlers.importConfig(file);
   });
+}
+
+export function setImportStatus(text) {
+  $("import-status").textContent = text;
+}
+
+// An in-page dialog, not window.confirm: an installed app can have native
+// dialogs suppressed, and a suppressed confirm reads as "false" — which
+// silently cancelled the import with nothing on screen to explain it.
+export function confirmImport(onYes) {
+  const dialog = $("import-confirm");
+  $("import-confirm-yes").onclick = () => {
+    dialog.close();
+    onYes();
+  };
+  const declined = () => setImportStatus("Kept the game in progress.");
+  $("import-confirm-no").onclick = () => {
+    dialog.close();
+    declined();
+  };
+  // Escape, or a platform back gesture, closes the dialog without either
+  // button — that is still a decline and should say so.
+  dialog.oncancel = declined;
+  dialog.showModal();
+  $("import-confirm-title").focus();
 }
 
 export function showText(text) {

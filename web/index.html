@@ -17,6 +17,15 @@
       <button id="help-open" aria-label="How this works">?</button>
     </header>
 
+    <dialog id="import-confirm" aria-labelledby="import-confirm-title">
+      <h2 id="import-confirm-title" tabindex="-1">Load a new team?</h2>
+      <p>There's a game in progress. Loading a team clears it — the minutes and notes go with it, so export first if you need them.</p>
+      <div class="row">
+        <button id="import-confirm-yes" class="big primary">Load team</button>
+        <button id="import-confirm-no" class="big">Keep playing</button>
+      </div>
+    </dialog>
+
     <dialog id="help" aria-labelledby="help-title">
       <h2 id="help-title" tabindex="-1">How this works</h2>
       <p><strong>Getting going.</strong> Open "Setup and export" and load your team file. Tap a kid on the bench to put them on the field — the clock starts with the first one.</p>
@@ -94,7 +103,10 @@
     <details id="setup">
       <summary>Setup and export</summary>
       <label for="import-file">Team config (the same JSON <code>hirdir build</code> reads) — loading one clears the current game</label>
-      <input type="file" id="import-file" accept="application/json">
+      <input type="file" id="import-file" accept="application/json,.json">
+      <button id="load-example" class="big">Load example team</button>
+      <p id="import-status" class="hint" aria-live="polite"></p>
+      <p class="hint">The example is invented names, for trying the app out or showing someone how it works.</p>
       <button id="export" class="big">Export game</button>
       <button id="end-game" class="big">End game</button>
       <p class="hint">Everything stays on this phone. Nothing is sent anywhere.</p>
