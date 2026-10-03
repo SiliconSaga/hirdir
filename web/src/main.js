@@ -23,6 +23,11 @@ let wakeLock = null;
 let wakeGeneration = 0;
 let loadCount = 0;
 
+// With no team loaded the page is empty and the one thing you need — the
+// importer — is behind a collapsed summary at the bottom. Open it once, at
+// startup only, so collapsing it again sticks.
+if (!team.roster.length) document.getElementById("setup").open = true;
+
 const now = () => clock.elapsed();
 const current = () => fold(log.events, team.roster, now());
 
