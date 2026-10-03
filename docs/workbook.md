@@ -66,7 +66,7 @@ Start a phone stopwatch at kickoff and pause it for the break. Write the minute 
 
 If you already know a kid will miss the next game, type `A` in that game's sheet **before printing** — the row prints greyed out, so you won't call a name nobody answers to.
 
-`± fair` compares a kid's minutes against an even split: game length × players per side ÷ kids present. Red means they are owed time next week. The [field app](field-app.md#the-fair-share-numbers) computes the same figure live.
+`± fair` compares a kid's minutes against an even split: game length × players per side ÷ kids present. Red means they are owed time next week. The [field app](field-app.md#the-fair-share-numbers) uses the same formula, except that it recomputes continuously as the clock runs rather than once at full time — and either way, a kid ticked `Here` who never went on lowers the split for everyone who did.
 
 ## Baked values
 

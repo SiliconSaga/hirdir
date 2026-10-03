@@ -44,7 +44,7 @@ The JavaScript side tests the pure modules — the event fold, the selectors, th
 
 ## Deploy
 
-`.github/workflows/pages.yml` publishes `web/` to GitHub Pages on every push to `main` that touches `web/**`. CI (`ci.yml`) runs both suites on every push and PR.
+`.github/workflows/pages.yml` publishes `web/` to GitHub Pages on every push to `main` that touches `web/**`. CI (`ci.yml`) runs ruff and both suites on pushes to `main` and on every pull request — a push to a topic branch with no PR open runs nothing.
 
 **The service worker's cache name is a hand-written constant** (`CACHE` in `web/sw.js`). Bump it whenever the shell changes. Because the worker refreshes files individually, forgetting leaves an *installed* app able to serve a refreshed `main.js` importing symbols from a cached older module — and the app then fails to start at all, on a phone, possibly at a field with no signal. This isn't hypothetical; it was caught in review once with the comment telling you to bump it three lines above the constant.
 

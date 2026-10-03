@@ -34,7 +34,7 @@ Their standing is `played − fair`: negative means owed time, positive means th
 Two things follow that surprise people:
 
 - **The figure moves continuously, even when nothing happens.** At 5-a-side with 9 kids present, a kid on the bench falls behind by about 33 seconds per minute of clock. So a kid who just came off level will show as owed a minute shortly after, with nobody having touched anything.
-- **A kid who refuses to play still counts.** Marking them *away* takes them out of the divisor; leaving them in means they're owed time next week, which is usually what you want.
+- **A kid who refuses to play still counts.** Marking them *away* takes them out of the divisor; leaving them in keeps the time they're owed on the books for next week. The cost is that it lowers everyone else's share too, so in a game carried by two or three willing kids those kids read as overplayed. [Issue #6](https://github.com/SiliconSaga/hirdir/issues/6) is about recording a declined shift so both can be true at once.
 
 The bench is sorted by who is owed the most, and shows an "owed N" figure only once a kid is a full minute behind — below that the number churned every few seconds and read as a bug.
 
