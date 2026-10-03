@@ -42,12 +42,13 @@ The same file the [field app](field-app.md) imports.
 | `practice_rows` | Blank activity lines in each game sheet's practice section |
 | `practice_title` | Heading for that section — e.g. `"WARM-UP — before kickoff"` for age groups whose session is all game |
 | `players[].dob` | Optional. Orders the lineup youngest first; players without one keep their listed order, last |
+| `players[].jersey` | Optional. Prefills Roster column A and shows on each row in the [field app](field-app.md). Text, not a number, so `07` and `00` survive |
 
 **Birthdates order the lineup and are then dropped.** The team bag numbers the smallest kids lowest, so youngest-first matches the jerseys. No birthdate or age is ever written into the workbook, and a test enforces it.
 
 ## What the workbook contains
 
-- **Roster** — the one place names and jersey numbers are typed. Two spare rows for late sign-ups, which appear on every game sheet automatically.
+- **Roster** — the one place names and jersey numbers are typed, unless the config already carries them, in which case column A arrives prefilled. Two spare rows for late sign-ups, which appear on every game sheet automatically.
 - **Season** — minutes per kid per game, games attended, games missed, total and per-game minutes, season ± fair, goals and flag counts. All formulas; nothing to type here.
 - **Activities** — a starter library of drills, with room to add your own. It sits third, ahead of the game sheets, so it doesn't get lost behind a season of tabs.
 - **One sheet per game** — a practice or warm-up plan on top (with a drop-down from the Activities tab and +/~/− ratings), and below it the grid: `Here ✓ / A`, the `In`/`Out` stopwatch-minute pairs, `Minutes played`, `± fair`, goals, ★/shy/needs-help, notes.

@@ -80,6 +80,27 @@ test("a leap day is a real date and survives", () => {
   assert.equal(team.roster[0].name, "Ada");
 });
 
+test("a jersey number in the config reaches the roster, as text", () => {
+  const team = importTeam({
+    team: "T",
+    players: [
+      { name: "Ada", dob: "2021-05-04", jersey: 1 },
+      { name: "Bjorn", dob: "2022-01-19", jersey: "07" },
+      { name: "Cleo", dob: "2021-11-02" },
+      { name: "Dev", dob: "2022-06-28", jersey: "  " },
+    ],
+  });
+  const worn = Object.fromEntries(team.roster.map((kid) => [kid.name, kid.jersey]));
+  assert.deepEqual(worn, { Ada: "1", Bjorn: "07", Cleo: null, Dev: null });
+});
+
+test("an unwearable jersey is rejected by name, so the coach knows which row", () => {
+  assert.throws(
+    () => importTeam({ team: "T", players: [{ name: "Ada", jersey: "123456" }] }),
+    /Ada/,
+  );
+});
+
 test("a nonsense players-per-side is rejected rather than poisoning fair share", () => {
   for (const bad of ["lots", 0, -2, 2.5, {}, true, [], ["3"]]) {
     assert.throws(

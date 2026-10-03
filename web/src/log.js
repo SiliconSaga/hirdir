@@ -1,5 +1,21 @@
 // The append-only event log: the single source of truth for a game.
 
+// A cheap content fingerprint, for "is what I exported still what is here?".
+// Counting events cannot answer that — undo followed by a different action
+// leaves the count alone — and nor can the events by themselves, since an
+// export also carries the roster's names and numbers and the minutes the
+// clock has run. Give it everything the export was made from. Values come
+// from the stored document, so it survives a reload.
+export function fingerprint(value) {
+  const text = JSON.stringify(value);
+  let hash = 0x811c9dc5; // FNV-1a, 32-bit
+  for (let i = 0; i < text.length; i += 1) {
+    hash ^= text.charCodeAt(i);
+    hash = Math.imul(hash, 0x01000193);
+  }
+  return `${text.length}:${(hash >>> 0).toString(36)}`;
+}
+
 export function createLog(events = []) {
   const log = events.slice();
   let groups = 0;

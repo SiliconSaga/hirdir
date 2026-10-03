@@ -257,4 +257,41 @@ dialog {
 details { margin-top: 24px; }
 summary { min-height: 44px; font-size: 1.1rem; padding: 10px 0; }
 #setup input { display: block; margin: 10px 0; font-size: 1rem; }
-#setup .big { margin-right: 8px; }
+#setup .big { margin-right: 8px; margin-bottom: 8px; }
+#setup h3 { margin: 22px 0 4px; font-size: 1rem; color: var(--green); }
+
+#roster-edit { list-style: none; margin: 10px 0; padding: 0; }
+
+.roster-row {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+/* Full-size targets: this gets used on a phone, often one-handed. */
+#setup .roster-row input,
+.add-kid input {
+  min-height: 48px;
+  margin: 0;
+  padding: 0 10px;
+  font: inherit;
+  color: var(--fg);
+  background: var(--bg);
+  border: 2px solid var(--line);
+  border-radius: 10px;
+}
+
+#setup .jersey-input {
+  flex: none;
+  width: 4.5em;
+  text-align: center;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+#setup .name-input { flex: 1; min-width: 0; }
+
+.add-kid { align-items: stretch; margin-top: 12px; }
+.add-kid #add-jersey { flex: none; width: 4.5em; text-align: center; }
+.add-kid #add-name { flex: 1; min-width: 0; }
+.add-kid .big { flex: none; margin: 0; }
