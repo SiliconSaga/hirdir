@@ -22,6 +22,7 @@ The constraint that shapes all of it: **dozens of volunteer coaches, none of who
 
 ## Open work
 
+- [Issue #6](https://github.com/SiliconSaga/hirdir/issues/6) — letting a bench kid *pass* on a shift, so the fair-share divisor counts the kids actually willing to play. Some games are carried by two or three kids while the bench declines; today the app has no way to know that, and the willing players read as hogging the field. How often a kid passes, and whether it falls across a season, is also the shy-kid-being-drawn-in measure minutes can never capture.
 - [Issue #2](https://github.com/SiliconSaga/hirdir/issues/2) — a wrap-up screen to replace the browser prompt when a game is reconstructed after a forgotten whistle, collecting what never got tapped while it's still fresh.
 - [Issue #3](https://github.com/SiliconSaga/hirdir/issues/3) — shipping in three flavors: the standalone page as it is now, a hosted instance with storage, and a fully connected one that syncs rosters and history. The same app at three levels of ambition, so a coach can start with the first and never notice the others exist.
 - A build step for the field app, so the service-worker cache name derives from a content hash rather than a human remembering to change a number. See [`development.md`](development.md#deploy).
