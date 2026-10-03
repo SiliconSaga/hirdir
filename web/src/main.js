@@ -179,6 +179,13 @@ function loadTeam(readConfig) {
   else apply();
 }
 
+// Everything an export is made from: the events, the names and numbers the
+// CSV prints, and the minutes the clock has run. A game exported mid-half is
+// out of date a second later, and that is the honest answer.
+function exportState() {
+  return fingerprint({ events: log.events, roster: team.roster, elapsed: Math.round(now()) });
+}
+
 function exportGame() {
   const state = current();
   const csv = toCsv(state, now(), team.onFieldTarget);
@@ -204,7 +211,7 @@ function exportGame() {
     }
     // Only a download that actually started counts as a record on disk; the
     // copy-out fallback below leaves it with the coach, not with the browser.
-    exportedAt = fingerprint(log.events);
+    exportedAt = exportState();
     persist();
   } catch {
     showText(csv); // select-all and copy: ugly, but it never fails
@@ -248,9 +255,9 @@ bind({
       return;
     }
     confirmNewGame(
-      fingerprint(log.events) === exportedAt
-        ? "The team stays as it is. This game's minutes, goals and notes are cleared — you have exported them."
-        : "This game has not been exported since the last thing you recorded, and clearing it is the one thing undo cannot take back.",
+      exportState() === exportedAt
+        ? "The team stays as it is. This game's minutes, goals and notes are cleared — you have exported exactly what is here."
+        : "This game has changed since it was last exported, if it ever was, and clearing it is the one thing undo cannot take back.",
       () => {
         releaseWakeLock();
         log = createLog([]);

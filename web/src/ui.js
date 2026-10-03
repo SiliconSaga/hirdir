@@ -204,7 +204,9 @@ export function bind(handlers) {
     const saved = handlers.editKid(row.dataset.kid, name, event.target.value);
     // The handler returns what it stored, so the field shows the trimmed
     // value it will actually be remembered by.
-    if (typeof saved === "string") event.target.value = saved;
+    if (typeof saved !== "string") return;
+    event.target.value = saved;
+    if (name === "name") relabel(row, saved);
   });
   $("add-kid").addEventListener("click", () => {
     if (handlers.addKid($("add-name").value, $("add-jersey").value)) {
@@ -234,23 +236,32 @@ export function renderRoster(roster) {
       const li = document.createElement("li");
       li.className = "roster-row";
       li.dataset.kid = kid.id;
-      const jersey = field("jersey", kid.jersey ?? "", `Jersey number for ${kid.name}`);
+      const jersey = field("jersey", kid.jersey ?? "");
       jersey.inputMode = "numeric";
       jersey.maxLength = 4;
-      li.append(jersey, field("name", kid.name, `Name for ${kid.name}`));
+      li.append(jersey, field("name", kid.name));
+      relabel(li, kid.name);
       return li;
     }),
   );
 }
 
-function field(name, value, label) {
+// Both labels name the child, so both have to follow a rename — the editor is
+// deliberately not repainted on an edit (it would take the focus with it), so
+// a screen reader would otherwise keep announcing the old name.
+function relabel(row, name) {
+  row.querySelector(".jersey-input").setAttribute("aria-label", `Jersey number for ${name}`);
+  row.querySelector(".name-input").setAttribute("aria-label", `Name for ${name}`);
+}
+
+// The aria-label is left to relabel(), which is also what a rename calls.
+function field(name, value) {
   const input = document.createElement("input");
   input.type = "text";
   input.className = `${name}-input`;
   input.dataset.field = name;
   input.value = value;
   input.autocomplete = "off";
-  input.setAttribute("aria-label", label);
   return input;
 }
 

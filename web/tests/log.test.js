@@ -24,6 +24,25 @@ test("an empty log has a fingerprint of its own", () => {
   assert.notEqual(fingerprint([]), fingerprint([{ seq: 1, t: 0, type: "game_start" }]));
 });
 
+test("the fingerprint covers everything an export is made from", () => {
+  // An export carries the roster's names and numbers and the minutes the clock
+  // has run, not only the events — so none of those may slip past unnoticed.
+  const events = [{ seq: 1, t: 0, type: "game_start" }];
+  const roster = [{ id: "k1", name: "Ada", jersey: "7" }];
+  const taken = fingerprint({ events, roster, elapsed: 600 });
+
+  assert.notEqual(fingerprint({ events, roster, elapsed: 601 }), taken);
+  assert.notEqual(
+    fingerprint({ events, roster: [{ id: "k1", name: "Ada B.", jersey: "7" }], elapsed: 600 }),
+    taken,
+  );
+  assert.notEqual(
+    fingerprint({ events, roster: [{ id: "k1", name: "Ada", jersey: "8" }], elapsed: 600 }),
+    taken,
+  );
+  assert.equal(fingerprint({ events, roster, elapsed: 600 }), taken);
+});
+
 test("append stamps a 1-based sequence and keeps the given clock time", () => {
   const log = createLog();
   const first = log.append("game_start", {}, 0);

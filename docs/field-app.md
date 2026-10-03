@@ -18,7 +18,7 @@ Both live in *Setup and export*, away from the game lists.
 
 It deliberately does not edit the live game rows. Those are buttons, they re-sort by who is owed time, and the one-second repaint would eat a half-typed name.
 
-**New game** clears the log and the clock and keeps the roster, which is how next Saturday starts. It asks first, and when nothing has been exported since the last recorded action it says so — clearing an unexported game is the one thing undo cannot take back.
+**New game** clears the log and the clock and keeps the roster, which is how next Saturday starts. It asks first, and warns unless what is on screen is exactly what was exported — clearing a game whose record is out of date is the one thing undo cannot take back. "Exactly" covers more than the events: an export carries the roster's names and numbers and the minutes the clock has run, so a rename after exporting, or simply leaving the clock running, makes the file on disk no longer the game in hand.
 
 Jersey numbers are optional throughout. They show in the number slot on every row, ride along in the CSV's `Jersey` column, and can be carried in a config as `players[].jersey`.
 
