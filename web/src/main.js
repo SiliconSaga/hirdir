@@ -254,22 +254,34 @@ bind({
       setRosterStatus("Nothing to clear — this game has nothing in it yet.");
       return;
     }
-    confirmNewGame(
-      exportState() === exportedAt
-        ? "The team stays as it is. This game's minutes, goals and notes are cleared — you have exported exactly what is here."
-        : "This game has changed since it was last exported, if it ever was, and clearing it is the one thing undo cannot take back.",
-      () => {
-        releaseWakeLock();
-        log = createLog([]);
-        clock = createClock(() => Date.now(), null);
-        pendingSub = null;
-        exportedAt = "";
-        team = { ...team, events: [], clock: null };
-        persist();
-        draw();
-        setRosterStatus("New game. The team is as you left it.");
-      },
-    );
+    const clear = () => {
+      releaseWakeLock();
+      log = createLog([]);
+      clock = createClock(() => Date.now(), null);
+      pendingSub = null;
+      exportedAt = "";
+      team = { ...team, events: [], clock: null };
+      persist();
+      draw();
+      setRosterStatus("New game. The team is as you left it.");
+    };
+    // The dialog can sit open while the clock runs on, so what it said when it
+    // opened may no longer hold when the coach taps. Only one direction is
+    // dangerous: a game that read as saved and no longer is must ask again,
+    // with the right warning, rather than go ahead on the strength of the old
+    // one. (The other way round is harmless — the warning was the cautious
+    // answer either way.)
+    const ask = (saved) =>
+      confirmNewGame(
+        saved
+          ? "The team stays as it is. This game's minutes, goals and notes are cleared — you have exported exactly what is here."
+          : "This game has changed since it was last exported, if it ever was, and clearing it is the one thing undo cannot take back.",
+        () => {
+          if (saved && exportState() !== exportedAt) ask(false);
+          else clear();
+        },
+      );
+    ask(exportState() === exportedAt);
   },
   toggleClock() {
     if (current().ended) return;
