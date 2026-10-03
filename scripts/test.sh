@@ -13,16 +13,35 @@ cd "$(dirname "$0")/.."
 if [ "$#" -gt 0 ]; then
   js=()
   py=()
+  keywords=()
   for selector in "$@"; do
+    target="${selector%%::*}" # drop a ::nodeid suffix before testing the path
     case "$selector" in
-      # Anything under web/ is the field app; everything else is Python, as a
-      # path or nodeid when one exists on disk and a -k keyword otherwise.
-      web/*) js+=("$selector") ;;
+      # Anything under web/ is the field app; everything else is Python. A
+      # selector that looks like a path but is not one is a typo, not a
+      # keyword — saying so beats a green run of something else entirely.
+      web/*)
+        [ -e "$target" ] || { echo "no such file: $target" >&2; exit 2; }
+        js+=("$selector")
+        ;;
+      */* | *.py)
+        [ -e "$target" ] || { echo "no such file: $target" >&2; exit 2; }
+        py+=("$selector")
+        ;;
       *)
-        if [ -e "${selector%%::*}" ]; then py+=("$selector"); else py+=(-k "$selector"); fi
+        if [ -e "$target" ]; then py+=("$selector"); else keywords+=("$selector"); fi
         ;;
     esac
   done
+  # pytest keeps only the last -k, so several keywords have to become one
+  # expression or all but one would be silently dropped.
+  if [ "${#keywords[@]}" -gt 0 ]; then
+    expression=""
+    for keyword in "${keywords[@]}"; do
+      if [ -z "$expression" ]; then expression="$keyword"; else expression="$expression or $keyword"; fi
+    done
+    py+=(-k "$expression")
+  fi
   status=0
   if [ "${#py[@]}" -gt 0 ]; then uv run --frozen pytest "${py[@]}" || status=1; fi
   if [ "${#js[@]}" -gt 0 ]; then node --test "${js[@]}" || status=1; fi

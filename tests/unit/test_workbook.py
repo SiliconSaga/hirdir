@@ -50,6 +50,16 @@ def test_roster_prefills_jersey_numbers_it_was_given(cfg, workbook_file):
     assert any(worn), "the example team should carry jersey numbers"
 
 
+def test_a_jersey_that_looks_like_a_formula_stays_text(example_data, tmp_path):
+    # Same class the CSV exporter already guards: a leading '=' would otherwise
+    # be evaluated by Excel rather than shown as the number on the shirt.
+    example_data["players"] = [{"name": "Ada", "dob": "2021-05-04", "jersey": "=1+1"}]
+    path = workbook.write(config.parse(example_data), tmp_path / "formula.xlsx")
+    cell = load_workbook(path)["Roster"].cell(row=FIRST_PLAYER_ROW, column=1)
+    assert cell.value == "=1+1"
+    assert cell.data_type == "s"
+
+
 def test_game_sheet_titles_name_the_opponent_and_field(cfg, workbook_file):
     wb = load_workbook(workbook_file)
     title = wb[cfg.sheet_names[0]]["A1"].value

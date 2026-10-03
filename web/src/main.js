@@ -1,7 +1,7 @@
 // Bootstrap: the only module that touches window — clock, storage, wake lock, tick.
 
 import { createClock, overran, suggestedEnd } from "./clock.js";
-import { createLog } from "./log.js";
+import { createLog, fingerprint } from "./log.js";
 import { fold } from "./fold.js";
 import { proposeSubOff } from "./selectors.js";
 import { buildView } from "./viewmodel.js";
@@ -33,9 +33,11 @@ let pendingSub = null;
 let wakeLock = null;
 let wakeGeneration = 0;
 let loadCount = 0;
-// How much of the log was in the last export, so "new game" can tell the
+// What the log looked like at the last export, so "new game" can tell the
 // difference between discarding a saved record and discarding the only copy.
-let exportedSize = team.exportedSize ?? 0;
+// A fingerprint, not a count: undo then a different action leaves the count
+// alone, and that game is no longer the one on disk.
+let exportedAt = team.exportedAt ?? "";
 
 // With no team loaded the page is empty and the one thing you need — the
 // importer — is behind a collapsed summary at the bottom. Open it once, at
@@ -46,7 +48,7 @@ const now = () => clock.elapsed();
 const current = () => fold(log.events, team.roster, now());
 
 function persist() {
-  team = { ...team, clock: clock.state(), exportedSize };
+  team = { ...team, clock: clock.state(), exportedAt };
   storage.save({ ...team, events: log.events });
 }
 
@@ -159,7 +161,7 @@ function loadTeam(readConfig) {
       log = createLog([]);
       clock = createClock(() => Date.now(), null);
       pendingSub = null;
-      exportedSize = 0;
+      exportedAt = "";
       persist();
       draw();
       renderRoster(team.roster);
@@ -202,7 +204,7 @@ function exportGame() {
     }
     // Only a download that actually started counts as a record on disk; the
     // copy-out fallback below leaves it with the coach, not with the browser.
-    exportedSize = log.size();
+    exportedAt = fingerprint(log.events);
     persist();
   } catch {
     showText(csv); // select-all and copy: ugly, but it never fails
@@ -246,7 +248,7 @@ bind({
       return;
     }
     confirmNewGame(
-      log.size() === exportedSize
+      fingerprint(log.events) === exportedAt
         ? "The team stays as it is. This game's minutes, goals and notes are cleared — you have exported them."
         : "This game has not been exported since the last thing you recorded, and clearing it is the one thing undo cannot take back.",
       () => {
@@ -254,7 +256,7 @@ bind({
         log = createLog([]);
         clock = createClock(() => Date.now(), null);
         pendingSub = null;
-        exportedSize = 0;
+        exportedAt = "";
         team = { ...team, events: [], clock: null };
         persist();
         draw();

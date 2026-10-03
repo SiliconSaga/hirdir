@@ -1,6 +1,28 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { createLog } from "../src/log.js";
+import { createLog, fingerprint } from "../src/log.js";
+
+test("the fingerprint follows the content, not the length", () => {
+  const log = createLog([]);
+  log.append("game_start", {}, 0);
+  log.append("goal", { kid: "k1" }, 60);
+  const exported = fingerprint(log.events);
+
+  // The case length cannot see: take one back, do something else instead.
+  log.undo();
+  log.append("flag", { kid: "k2", flag: "shy" }, 60);
+  assert.equal(log.size(), 2);
+  assert.notEqual(fingerprint(log.events), exported);
+
+  // And the same two events always fingerprint the same, through a reload.
+  const reloaded = createLog(JSON.parse(JSON.stringify(log.events)));
+  assert.equal(fingerprint(reloaded.events), fingerprint(log.events));
+});
+
+test("an empty log has a fingerprint of its own", () => {
+  assert.equal(fingerprint([]), fingerprint([]));
+  assert.notEqual(fingerprint([]), fingerprint([{ seq: 1, t: 0, type: "game_start" }]));
+});
 
 test("append stamps a 1-based sequence and keeps the given clock time", () => {
   const log = createLog();

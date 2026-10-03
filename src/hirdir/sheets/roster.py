@@ -40,7 +40,11 @@ def build(wb, cfg: TeamConfig):
     for player in cfg.players:
         # A config that already knows the numbers prefills them; otherwise the
         # column stays the coach's to fill in, as the note in A2 says.
-        cell(ws, f"A{row}", player.jersey, f(12, True, INPUT_TEXT), CENTER, BOX)
+        jersey = cell(ws, f"A{row}", player.jersey, f(12, True, INPUT_TEXT), CENTER, BOX)
+        # A jersey is what is printed on a shirt, never a formula: openpyxl
+        # reads a leading '=' as one, and Excel would then evaluate it.
+        if player.jersey is not None:
+            jersey.data_type = "s"
         cell(ws, f"B{row}", player.name, f(12, True, INPUT_TEXT), LEFT, BOX)
         cell(ws, f"C{row}", None, f(10), LEFT, BOX)
         cell(ws, f"D{row}", None, f(10), LEFT, BOX)
