@@ -41,6 +41,15 @@ def test_roster_lists_players_youngest_first_with_spare_rows(cfg, workbook_file)
         assert ws.cell(row=row, column=2).border.left.style == "thin"
 
 
+def test_roster_prefills_jersey_numbers_it_was_given(cfg, workbook_file):
+    # Column A is still the coach's to type in; a config that already knows the
+    # numbers just saves them the typing, and keeps the app and sheet agreeing.
+    ws = load_workbook(workbook_file)["Roster"]
+    worn = [ws.cell(row=FIRST_PLAYER_ROW + i, column=1).value for i in range(len(cfg.players))]
+    assert worn == [p.jersey for p in cfg.players]
+    assert any(worn), "the example team should carry jersey numbers"
+
+
 def test_game_sheet_titles_name_the_opponent_and_field(cfg, workbook_file):
     wb = load_workbook(workbook_file)
     title = wb[cfg.sheet_names[0]]["A1"].value

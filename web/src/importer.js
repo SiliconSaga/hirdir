@@ -1,7 +1,19 @@
 // Reads the same team config the workbook generator uses. Birthdates order
 // the lineup and are then dropped — they must never reach app state.
 
+import { jerseyOf } from "./roster.js";
+
 export class ImportError extends Error {}
+
+// The same rule the in-app roster panel uses, so a jersey typed on the phone
+// and one read from a file cannot end up meaning different things.
+function jersey(value, who) {
+  try {
+    return jerseyOf(value);
+  } catch (error) {
+    throw new ImportError(`${who}: ${error.message}`);
+  }
+}
 
 const DEFAULT_ON_FIELD = 4;
 const ISO_DATE = /^\d{4}-\d{2}-\d{2}$/;
@@ -41,7 +53,11 @@ export function importTeam(config) {
   }
   const named = players.map((player, index) => {
     if (!player?.name) throw new ImportError(`Player ${index + 1} has no name.`);
-    return { name: String(player.name), dob: birthdate(player.dob, player.name) };
+    return {
+      name: String(player.name),
+      dob: birthdate(player.dob, player.name),
+      jersey: jersey(player.jersey, player.name),
+    };
   });
   // Equal birthdates must compare 0, or sort reorders them and the lineup
   // stops matching the workbook's (Python sorts stably on the same key).
@@ -53,7 +69,7 @@ export function importTeam(config) {
     roster: [...dated, ...undated].map((player, index) => ({
       id: `k${index + 1}`,
       name: player.name,
-      jersey: null,
+      jersey: player.jersey,
     })),
   };
 }

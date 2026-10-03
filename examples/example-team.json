@@ -1,19 +1,19 @@
 {
-  "_comment": "Invented names — real rosters belong in local/, which is gitignored. Birthdates are used only to order the lineup youngest first and never appear in the workbook.",
+  "_comment": "Invented names — real rosters belong in local/, which is gitignored. Birthdates are used only to order the lineup youngest first and never appear in the workbook. Jerseys follow that order, as the team bag numbers the smallest kids lowest.",
   "team": "Example Little Kickers",
   "season": "Fall 2026",
   "on_field": 4,
   "stints": 4,
   "practice_rows": 5,
   "players": [
-    {"name": "Ada", "dob": "2021-05-04"},
-    {"name": "Bjorn", "dob": "2022-01-19"},
-    {"name": "Cleo", "dob": "2021-11-02"},
-    {"name": "Dev", "dob": "2022-06-28"},
-    {"name": "Esme", "dob": "2021-08-15"},
-    {"name": "Finn", "dob": "2021-03-30"},
-    {"name": "Gita", "dob": "2022-03-11"},
-    {"name": "Hugo", "dob": "2021-09-22"}
+    {"name": "Ada", "dob": "2021-05-04", "jersey": "7"},
+    {"name": "Bjorn", "dob": "2022-01-19", "jersey": "3"},
+    {"name": "Cleo", "dob": "2021-11-02", "jersey": "4"},
+    {"name": "Dev", "dob": "2022-06-28", "jersey": "1"},
+    {"name": "Esme", "dob": "2021-08-15", "jersey": "6"},
+    {"name": "Finn", "dob": "2021-03-30", "jersey": "8"},
+    {"name": "Gita", "dob": "2022-03-11", "jersey": "2"},
+    {"name": "Hugo", "dob": "2021-09-22", "jersey": "5"}
   ],
   "games": [
     {"date": "2026-09-20", "opponent": "Otters", "field": "1"},

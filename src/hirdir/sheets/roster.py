@@ -38,7 +38,9 @@ def build(wb, cfg: TeamConfig):
 
     row = FIRST_PLAYER_ROW
     for player in cfg.players:
-        cell(ws, f"A{row}", None, f(12, True, INPUT_TEXT), CENTER, BOX)
+        # A config that already knows the numbers prefills them; otherwise the
+        # column stays the coach's to fill in, as the note in A2 says.
+        cell(ws, f"A{row}", player.jersey, f(12, True, INPUT_TEXT), CENTER, BOX)
         cell(ws, f"B{row}", player.name, f(12, True, INPUT_TEXT), LEFT, BOX)
         cell(ws, f"C{row}", None, f(10), LEFT, BOX)
         cell(ws, f"D{row}", None, f(10), LEFT, BOX)
