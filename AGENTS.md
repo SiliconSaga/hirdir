@@ -1,6 +1,6 @@
 # Agent guidance — hirdir
 
-Read [`README.md`](README.md) for what this is and [`docs/plans/2026-09-19-hirdir-phases-design.md`](docs/plans/2026-09-19-hirdir-phases-design.md) for where it's going.
+Read [`README.md`](README.md) for what this is, [`docs/development.md`](docs/development.md) for how to work on it, and [`docs/roadmap.md`](docs/roadmap.md) for where it's going. The deeper reference is split between [`docs/field-app.md`](docs/field-app.md) and [`docs/workbook.md`](docs/workbook.md).
 
 ## The one rule that matters
 
@@ -13,7 +13,7 @@ Read [`README.md`](README.md) for what this is and [`docs/plans/2026-09-19-hirdi
 ## Working here
 
 ```bash
-ws test hirdir      # uv run pytest
+ws test hirdir      # bash scripts/test.sh — pytest and node --test, both
 ws lint hirdir      # uv run ruff check src tests
 ws format hirdir    # uv run ruff format src tests
 ws run hirdir       # builds the example workbook into local/
