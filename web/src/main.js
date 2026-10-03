@@ -7,9 +7,20 @@ import { proposeSubOff } from "./selectors.js";
 import { buildView } from "./viewmodel.js";
 import { browserBacking, createStorage } from "./storage.js";
 import { importTeam } from "./importer.js";
+import { addKid, editKid } from "./roster.js";
 import { EXAMPLE_TEAM } from "./example-team.js";
 import { toCsv, toJson } from "./exporter.js";
-import { bind, confirmImport, openRollCall, render, setImportStatus, showText } from "./ui.js";
+import {
+  bind,
+  confirmImport,
+  confirmNewGame,
+  openRollCall,
+  render,
+  renderRoster,
+  setImportStatus,
+  setRosterStatus,
+  showText,
+} from "./ui.js";
 
 const backing = browserBacking(window);
 const storage = createStorage(backing);
@@ -22,6 +33,9 @@ let pendingSub = null;
 let wakeLock = null;
 let wakeGeneration = 0;
 let loadCount = 0;
+// How much of the log was in the last export, so "new game" can tell the
+// difference between discarding a saved record and discarding the only copy.
+let exportedSize = team.exportedSize ?? 0;
 
 // With no team loaded the page is empty and the one thing you need — the
 // importer — is behind a collapsed summary at the bottom. Open it once, at
@@ -32,7 +46,7 @@ const now = () => clock.elapsed();
 const current = () => fold(log.events, team.roster, now());
 
 function persist() {
-  team = { ...team, clock: clock.state() };
+  team = { ...team, clock: clock.state(), exportedSize };
   storage.save({ ...team, events: log.events });
 }
 
@@ -145,8 +159,10 @@ function loadTeam(readConfig) {
       log = createLog([]);
       clock = createClock(() => Date.now(), null);
       pendingSub = null;
+      exportedSize = 0;
       persist();
       draw();
+      renderRoster(team.roster);
       // Say so: a picker that closes with nothing visibly different is
       // indistinguishable from a failure.
       setImportStatus(`Loaded ${parsed.team} — ${parsed.roster.length} players.`);
@@ -184,6 +200,10 @@ function exportGame() {
       link.remove();
       URL.revokeObjectURL(url);
     }
+    // Only a download that actually started counts as a record on disk; the
+    // copy-out fallback below leaves it with the coach, not with the browser.
+    exportedSize = log.size();
+    persist();
   } catch {
     showText(csv); // select-all and copy: ugly, but it never fails
   }
@@ -191,6 +211,57 @@ function exportGame() {
 
 bind({
   kidAction,
+  // Roster edits change the team, not the game: they are not events, so undo
+  // does not reach them. Ids never move, so a rename mid-game is safe and a
+  // kid added mid-game simply arrives owed time, like a late arrival.
+  addKid(name, jersey) {
+    try {
+      team = { ...team, roster: addKid(team.roster, { name, jersey }) };
+      persist();
+      renderRoster(team.roster);
+      draw();
+      setRosterStatus(`Added ${team.roster.at(-1).name}.`);
+      return true;
+    } catch (error) {
+      setRosterStatus(error.message);
+      return false;
+    }
+  },
+  editKid(id, change, value) {
+    try {
+      team = { ...team, roster: editKid(team.roster, id, { [change]: value }) };
+      persist();
+      draw(); // the game lists carry the name and number too
+      setRosterStatus("Saved.");
+      return team.roster.find((kid) => kid.id === id)?.[change] ?? "";
+    } catch (error) {
+      setRosterStatus(error.message);
+      renderRoster(team.roster); // refused: put back what is actually stored
+      return undefined;
+    }
+  },
+  newGame() {
+    if (!log.size()) {
+      setRosterStatus("Nothing to clear — this game has nothing in it yet.");
+      return;
+    }
+    confirmNewGame(
+      log.size() === exportedSize
+        ? "The team stays as it is. This game's minutes, goals and notes are cleared — you have exported them."
+        : "This game has not been exported since the last thing you recorded, and clearing it is the one thing undo cannot take back.",
+      () => {
+        releaseWakeLock();
+        log = createLog([]);
+        clock = createClock(() => Date.now(), null);
+        pendingSub = null;
+        exportedSize = 0;
+        team = { ...team, events: [], clock: null };
+        persist();
+        draw();
+        setRosterStatus("New game. The team is as you left it.");
+      },
+    );
+  },
   toggleClock() {
     if (current().ended) return;
     if (clock.isRunning()) {
@@ -316,6 +387,7 @@ if (clock.isRunning() && !current().ended) requestWakeLock();
 
 setInterval(draw, 1000);
 draw();
+renderRoster(team.roster); // once: the editor is repainted only when it changes
 
 if ("serviceWorker" in navigator && location.protocol.startsWith("http")) {
   navigator.serviceWorker.register("sw.js").catch(() => {

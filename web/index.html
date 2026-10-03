@@ -28,7 +28,7 @@
 
     <dialog id="help" aria-labelledby="help-title">
       <h2 id="help-title" tabindex="-1">How this works</h2>
-      <p><strong>Getting going.</strong> Open "Setup and export" and load your team file. Tap a kid on the bench to put them on the field — the clock starts with the first one.</p>
+      <p><strong>Getting going.</strong> Open "Setup and export" and load your team file, or build the team right there — type a name and tap Add, as many times as you need. Jersey numbers are optional. Tap a kid on the bench to put them on the field; the clock starts with the first one.</p>
       <p><strong>Subbing.</strong> While there's room, a tap puts a kid straight on. Once the field is full, tapping a bench kid asks who comes off, already suggesting whoever has been on longest. Tap a different name on the field to swap someone else out instead.</p>
       <p><strong>If you lose track</strong> — and you will — tap <strong>Roll call</strong> and tap everyone who is actually out there. That becomes the truth; nobody loses their minutes.</p>
       <p><strong>Undo</strong> takes back the last thing you did, a whole substitution included.</p>
@@ -51,6 +51,7 @@
 
       <h3>Ending up</h3>
       <p>Pause is halftime; nobody accrues time while it's paused. At full time, "End game", then <strong>Export game</strong> before you close the tab — that's the record.</p>
+      <p><strong>Next week,</strong> tap <strong>New game</strong> in Setup. The team stays; the minutes, goals and notes clear. It asks first, and says so if you haven't exported.</p>
       <p class="hint">Everything stays on this phone. Nothing about the kids is sent anywhere.</p>
 
       <button id="help-close" class="big primary">Got it</button>
@@ -100,6 +101,15 @@
       placeholder="Tap here and use your keyboard's mic…"></textarea>
     <button id="note-save" class="big">Save note</button>
 
+    <dialog id="new-game-confirm" aria-labelledby="new-game-title">
+      <h2 id="new-game-title" tabindex="-1">Start a new game?</h2>
+      <p id="new-game-warning"></p>
+      <div class="row">
+        <button id="new-game-yes" class="big primary">New game</button>
+        <button id="new-game-no" class="big">Keep this one</button>
+      </div>
+    </dialog>
+
     <details id="setup">
       <summary>Setup and export</summary>
       <label for="import-file">Team config (the same JSON <code>hirdir build</code> reads) — loading one clears the current game</label>
@@ -107,8 +117,24 @@
       <button id="load-example" class="big">Load example team</button>
       <p id="import-status" class="hint" aria-live="polite"></p>
       <p class="hint">The example is invented names, for trying the app out or showing someone how it works.</p>
+
+      <h3>The team</h3>
+      <p class="hint">Tap a number or a name to change it. Numbers are optional — leave them blank if you call everyone by name.</p>
+      <ul id="roster-edit"></ul>
+      <div class="row add-kid">
+        <input type="text" id="add-jersey" inputmode="numeric" maxlength="4" placeholder="#"
+          aria-label="Jersey number for the new player" autocomplete="off">
+        <input type="text" id="add-name" placeholder="New player's name"
+          aria-label="Name for the new player" autocomplete="off">
+        <button id="add-kid" class="big">Add</button>
+      </div>
+      <p id="roster-status" class="hint" aria-live="polite"></p>
+
+      <h3>The game</h3>
       <button id="export" class="big">Export game</button>
       <button id="end-game" class="big">End game</button>
+      <button id="new-game" class="big">New game</button>
+      <p class="hint">Export writes the record out. New game clears the minutes and keeps the team, for next week.</p>
       <p class="hint">Everything stays on this phone. Nothing is sent anywhere.</p>
     </details>
   </body>

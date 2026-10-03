@@ -195,6 +195,25 @@ export function bind(handlers) {
     if (box.value.trim()) handlers.note(box.value.trim());
     box.value = "";
   });
+  // change, not input: it fires on blur or Enter, so a name is saved once when
+  // the coach is done with it rather than on every keystroke.
+  $("roster-edit").addEventListener("change", (event) => {
+    const row = event.target.closest(".roster-row");
+    const name = event.target.dataset.field;
+    if (!row || !name) return;
+    const saved = handlers.editKid(row.dataset.kid, name, event.target.value);
+    // The handler returns what it stored, so the field shows the trimmed
+    // value it will actually be remembered by.
+    if (typeof saved === "string") event.target.value = saved;
+  });
+  $("add-kid").addEventListener("click", () => {
+    if (handlers.addKid($("add-name").value, $("add-jersey").value)) {
+      $("add-name").value = "";
+      $("add-jersey").value = "";
+      $("add-name").focus(); // adding a roster is a run of several
+    }
+  });
+  $("new-game").addEventListener("click", handlers.newGame);
   $("export").addEventListener("click", handlers.exportGame);
   $("load-example").addEventListener("click", handlers.loadExample);
   $("import-file").addEventListener("change", (event) => {
@@ -204,6 +223,58 @@ export function bind(handlers) {
     event.target.value = "";
     if (file) handlers.importConfig(file);
   });
+}
+
+// The roster editor lives in Setup rather than over the game lists: those rows
+// are buttons, they re-sort by who is owed time, and the one-second repaint
+// would eat a half-typed name. Painted on demand, never on the clock.
+export function renderRoster(roster) {
+  $("roster-edit").replaceChildren(
+    ...roster.map((kid) => {
+      const li = document.createElement("li");
+      li.className = "roster-row";
+      li.dataset.kid = kid.id;
+      const jersey = field("jersey", kid.jersey ?? "", `Jersey number for ${kid.name}`);
+      jersey.inputMode = "numeric";
+      jersey.maxLength = 4;
+      li.append(jersey, field("name", kid.name, `Name for ${kid.name}`));
+      return li;
+    }),
+  );
+}
+
+function field(name, value, label) {
+  const input = document.createElement("input");
+  input.type = "text";
+  input.className = `${name}-input`;
+  input.dataset.field = name;
+  input.value = value;
+  input.autocomplete = "off";
+  input.setAttribute("aria-label", label);
+  return input;
+}
+
+export function setRosterStatus(text) {
+  $("roster-status").textContent = text;
+}
+
+// Same in-page dialog as the import confirm, for the same reason: a native
+// confirm can be suppressed in an installed app, and a suppressed one reads
+// as "no" with nothing on screen to say why.
+export function confirmNewGame(warning, onYes) {
+  const dialog = $("new-game-confirm");
+  $("new-game-warning").textContent = warning;
+  $("new-game-yes").onclick = () => {
+    dialog.close();
+    onYes();
+  };
+  const declined = () => setRosterStatus("Kept the game you had.");
+  $("new-game-no").onclick = () => {
+    dialog.close();
+    declined();
+  };
+  dialog.oncancel = declined;
+  dialog.showModal();
 }
 
 export function setImportStatus(text) {
