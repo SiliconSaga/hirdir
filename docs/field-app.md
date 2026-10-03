@@ -10,6 +10,18 @@ An append-only event log: kickoff, each sub in and out, goals, ★/shy/needs-hel
 
 The clock is anchored to wall time, so the game keeps running while the screen is off or the app is closed.
 
+## The team, and the next game
+
+Both live in *Setup and export*, away from the game lists.
+
+**The roster panel** lists the team in lineup order, each row a jersey number and a name, with an *Add* row at the bottom. A coach with no config file builds the team here; one with a file can still fix a spelling or set a number the bag turned out to use. Edits save when the field loses focus, and ids never move — renaming a child mid-game leaves their minutes exactly where they were.
+
+It deliberately does not edit the live game rows. Those are buttons, they re-sort by who is owed time, and the one-second repaint would eat a half-typed name.
+
+**New game** clears the log and the clock and keeps the roster, which is how next Saturday starts. It asks first, and when nothing has been exported since the last recorded action it says so — clearing an unexported game is the one thing undo cannot take back.
+
+Jersey numbers are optional throughout. They show in the number slot on every row, ride along in the CSV's `Jersey` column, and can be carried in a config as `players[].jersey`.
+
 ## Where the data lives
 
 In your browser's local storage, on that one device. No account, no sync, no server. Consequences worth knowing:
@@ -17,7 +29,7 @@ In your browser's local storage, on that one device. No account, no sync, no ser
 - Clearing site data for the page clears the game in progress.
 - A private/incognito window may refuse to store at all — the app says so in a banner and keeps working, but a reload loses the game.
 - Loading a different team file clears the current game. The app asks first if one is in progress.
-- **Export is the only durable record.** *Export game* writes two files: a CSV whose columns match the workbook's game sheet, and the raw event log as JSON. The JSON is the complete document and can be re-imported.
+- **Export is the only durable record.** *Export game* writes two files: a CSV whose columns match the workbook's game sheet, and the raw event log as JSON. The JSON is the complete document — team, roster, clock and every event — but the app cannot currently load it back, since the importer reads a config's `players` list rather than app state's `roster` ([issue #8](https://github.com/SiliconSaga/hirdir/issues/8)).
 
 Exports are named `<team>-<date>`, which is enough to tell games apart at one game a day. For a double-header, export after each game and rename.
 
