@@ -1,6 +1,47 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { createLog } from "../src/log.js";
+import { createLog, fingerprint } from "../src/log.js";
+
+test("the fingerprint follows the content, not the length", () => {
+  const log = createLog([]);
+  log.append("game_start", {}, 0);
+  log.append("goal", { kid: "k1" }, 60);
+  const exported = fingerprint(log.events);
+
+  // The case length cannot see: take one back, do something else instead.
+  log.undo();
+  log.append("flag", { kid: "k2", flag: "shy" }, 60);
+  assert.equal(log.size(), 2);
+  assert.notEqual(fingerprint(log.events), exported);
+
+  // And the same two events always fingerprint the same, through a reload.
+  const reloaded = createLog(JSON.parse(JSON.stringify(log.events)));
+  assert.equal(fingerprint(reloaded.events), fingerprint(log.events));
+});
+
+test("an empty log has a fingerprint of its own", () => {
+  assert.equal(fingerprint([]), fingerprint([]));
+  assert.notEqual(fingerprint([]), fingerprint([{ seq: 1, t: 0, type: "game_start" }]));
+});
+
+test("the fingerprint covers everything an export is made from", () => {
+  // An export carries the roster's names and numbers and the minutes the clock
+  // has run, not only the events — so none of those may slip past unnoticed.
+  const events = [{ seq: 1, t: 0, type: "game_start" }];
+  const roster = [{ id: "k1", name: "Ada", jersey: "7" }];
+  const taken = fingerprint({ events, roster, elapsed: 600 });
+
+  assert.notEqual(fingerprint({ events, roster, elapsed: 601 }), taken);
+  assert.notEqual(
+    fingerprint({ events, roster: [{ id: "k1", name: "Ada B.", jersey: "7" }], elapsed: 600 }),
+    taken,
+  );
+  assert.notEqual(
+    fingerprint({ events, roster: [{ id: "k1", name: "Ada", jersey: "8" }], elapsed: 600 }),
+    taken,
+  );
+  assert.equal(fingerprint({ events, roster, elapsed: 600 }), taken);
+});
 
 test("append stamps a 1-based sequence and keeps the given clock time", () => {
   const log = createLog();

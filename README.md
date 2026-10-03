@@ -14,8 +14,9 @@ A coaching tool started for [Mountain Top League](https://soccer.mountaintopleag
 2. **Add it to your home screen** — *Share → Add to Home Screen* on iPhone, *⋮ → Add to Home screen* on Android. It then opens like an app and works with no signal at the field.
 3. **Try it:** open *Setup and export* and tap **Load example team**. The names are invented; tap around and nothing is at stake.
 4. **Tap the `?`** in the top corner. That's the whole guide to using it during a game, and it's always there when you forget something mid-match.
-5. **For your own team**, load a team file from *Setup and export*. Ask Rasmus for one, or see [`docs/workbook.md`](docs/workbook.md#config) for the format — it's a small text file with the roster in it.
+5. **For your own team**, type it in: *Setup and export* → *The team*, a name and tap **Add**, as many times as you need. Jersey numbers are optional. (If someone hands you a team file, the picker above takes that instead — see [`docs/workbook.md`](docs/workbook.md#config) for the format.)
 6. **At full time:** *End game*, then **Export game**. That's the record; without it the game only lives in your phone's browser storage.
+7. **Next Saturday:** *New game*. The team stays, the minutes clear.
 
 Everything stays on your phone. There is no account, and nothing about the kids is sent anywhere — the only thing the app fetches is itself.
 

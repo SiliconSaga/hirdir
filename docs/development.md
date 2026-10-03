@@ -21,6 +21,9 @@ Node.js 20+ is needed only for the field app's tests (`node --test`). The app it
 
 ```bash
 bash scripts/test.sh           # both suites — this is what `ws test hirdir` runs
+ws test hirdir web/tests/roster.test.js        # one JS file
+ws test hirdir tests/unit/test_config.py       # one Python file, or a nodeid
+ws test hirdir fair_share                      # anything else becomes pytest -k
 uv run pytest                  # Python only
 node --test web/tests          # JavaScript only
 uv run ruff check src tests    # or: ws lint hirdir

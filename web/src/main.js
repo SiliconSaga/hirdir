@@ -1,15 +1,26 @@
 // Bootstrap: the only module that touches window — clock, storage, wake lock, tick.
 
 import { createClock, overran, suggestedEnd } from "./clock.js";
-import { createLog } from "./log.js";
+import { createLog, fingerprint } from "./log.js";
 import { fold } from "./fold.js";
 import { proposeSubOff } from "./selectors.js";
 import { buildView } from "./viewmodel.js";
 import { browserBacking, createStorage } from "./storage.js";
 import { importTeam } from "./importer.js";
+import { addKid, editKid } from "./roster.js";
 import { EXAMPLE_TEAM } from "./example-team.js";
 import { toCsv, toJson } from "./exporter.js";
-import { bind, confirmImport, openRollCall, render, setImportStatus, showText } from "./ui.js";
+import {
+  bind,
+  confirmImport,
+  confirmNewGame,
+  openRollCall,
+  render,
+  renderRoster,
+  setImportStatus,
+  setRosterStatus,
+  showText,
+} from "./ui.js";
 
 const backing = browserBacking(window);
 const storage = createStorage(backing);
@@ -22,6 +33,11 @@ let pendingSub = null;
 let wakeLock = null;
 let wakeGeneration = 0;
 let loadCount = 0;
+// What the log looked like at the last export, so "new game" can tell the
+// difference between discarding a saved record and discarding the only copy.
+// A fingerprint, not a count: undo then a different action leaves the count
+// alone, and that game is no longer the one on disk.
+let exportedAt = team.exportedAt ?? "";
 
 // With no team loaded the page is empty and the one thing you need — the
 // importer — is behind a collapsed summary at the bottom. Open it once, at
@@ -32,7 +48,7 @@ const now = () => clock.elapsed();
 const current = () => fold(log.events, team.roster, now());
 
 function persist() {
-  team = { ...team, clock: clock.state() };
+  team = { ...team, clock: clock.state(), exportedAt };
   storage.save({ ...team, events: log.events });
 }
 
@@ -145,8 +161,10 @@ function loadTeam(readConfig) {
       log = createLog([]);
       clock = createClock(() => Date.now(), null);
       pendingSub = null;
+      exportedAt = "";
       persist();
       draw();
+      renderRoster(team.roster);
       // Say so: a picker that closes with nothing visibly different is
       // indistinguishable from a failure.
       setImportStatus(`Loaded ${parsed.team} — ${parsed.roster.length} players.`);
@@ -159,6 +177,13 @@ function loadTeam(readConfig) {
   // export button — so a game in progress asks first, in-page.
   if (log.size()) confirmImport(apply);
   else apply();
+}
+
+// Everything an export is made from: the events, the names and numbers the
+// CSV prints, and the minutes the clock has run. A game exported mid-half is
+// out of date a second later, and that is the honest answer.
+function exportState() {
+  return fingerprint({ events: log.events, roster: team.roster, elapsed: Math.round(now()) });
 }
 
 function exportGame() {
@@ -184,6 +209,10 @@ function exportGame() {
       link.remove();
       URL.revokeObjectURL(url);
     }
+    // Only a download that actually started counts as a record on disk; the
+    // copy-out fallback below leaves it with the coach, not with the browser.
+    exportedAt = exportState();
+    persist();
   } catch {
     showText(csv); // select-all and copy: ugly, but it never fails
   }
@@ -191,6 +220,69 @@ function exportGame() {
 
 bind({
   kidAction,
+  // Roster edits change the team, not the game: they are not events, so undo
+  // does not reach them. Ids never move, so a rename mid-game is safe and a
+  // kid added mid-game simply arrives owed time, like a late arrival.
+  addKid(name, jersey) {
+    try {
+      team = { ...team, roster: addKid(team.roster, { name, jersey }) };
+      persist();
+      renderRoster(team.roster);
+      draw();
+      setRosterStatus(`Added ${team.roster.at(-1).name}.`);
+      return true;
+    } catch (error) {
+      setRosterStatus(error.message);
+      return false;
+    }
+  },
+  editKid(id, change, value) {
+    try {
+      team = { ...team, roster: editKid(team.roster, id, { [change]: value }) };
+      persist();
+      draw(); // the game lists carry the name and number too
+      setRosterStatus("Saved.");
+      return team.roster.find((kid) => kid.id === id)?.[change] ?? "";
+    } catch (error) {
+      setRosterStatus(error.message);
+      renderRoster(team.roster); // refused: put back what is actually stored
+      return undefined;
+    }
+  },
+  newGame() {
+    if (!log.size()) {
+      setRosterStatus("Nothing to clear — this game has nothing in it yet.");
+      return;
+    }
+    const clear = () => {
+      releaseWakeLock();
+      log = createLog([]);
+      clock = createClock(() => Date.now(), null);
+      pendingSub = null;
+      exportedAt = "";
+      team = { ...team, events: [], clock: null };
+      persist();
+      draw();
+      setRosterStatus("New game. The team is as you left it.");
+    };
+    // The dialog can sit open while the clock runs on, so what it said when it
+    // opened may no longer hold when the coach taps. Only one direction is
+    // dangerous: a game that read as saved and no longer is must ask again,
+    // with the right warning, rather than go ahead on the strength of the old
+    // one. (The other way round is harmless — the warning was the cautious
+    // answer either way.)
+    const ask = (saved) =>
+      confirmNewGame(
+        saved
+          ? "The team stays as it is. This game's minutes, goals and notes are cleared — you have exported exactly what is here."
+          : "This game has changed since it was last exported, if it ever was, and clearing it is the one thing undo cannot take back.",
+        () => {
+          if (saved && exportState() !== exportedAt) ask(false);
+          else clear();
+        },
+      );
+    ask(exportState() === exportedAt);
+  },
   toggleClock() {
     if (current().ended) return;
     if (clock.isRunning()) {
@@ -316,6 +408,7 @@ if (clock.isRunning() && !current().ended) requestWakeLock();
 
 setInterval(draw, 1000);
 draw();
+renderRoster(team.roster); // once: the editor is repainted only when it changes
 
 if ("serviceWorker" in navigator && location.protocol.startsWith("http")) {
   navigator.serviceWorker.register("sw.js").catch(() => {

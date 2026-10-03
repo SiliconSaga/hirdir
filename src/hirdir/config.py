@@ -13,6 +13,7 @@ from datetime import date
 from pathlib import Path
 
 MAX_SHEET_NAME = 31
+MAX_JERSEY = 4
 
 
 class ConfigError(ValueError):
@@ -23,6 +24,7 @@ class ConfigError(ValueError):
 class Player:
     name: str
     dob: date | None = None
+    jersey: str | None = None
 
 
 @dataclass(frozen=True)
@@ -66,6 +68,20 @@ def _parse_date(value: str, where: str) -> date:
         raise ConfigError(f"{where}: '{value}' is not a YYYY-MM-DD date") from exc
 
 
+def _parse_jersey(value, where: str) -> str | None:
+    """Text, not an int: '07' and '00' are real shirt numbers and lose their
+    meaning as integers. Mirrors web/src/roster.js so a number typed on the
+    phone and one read from a file mean the same thing."""
+    if value is None:
+        return None
+    text = str(value).strip()
+    if not text:
+        return None
+    if len(text) > MAX_JERSEY:
+        raise ConfigError(f"{where}: '{text}' is too long for a jersey number")
+    return text
+
+
 def _sheet_names(games: list[Game]) -> list[str]:
     """G1-prefixed, unique, and within Excel's 31-character limit."""
     names = []
@@ -100,6 +116,7 @@ def parse(data: dict, where: str = "config") -> TeamConfig:
             dob=_parse_date(p["dob"], f"{where}: {p.get('name', f'player {i + 1}')}")
             if p.get("dob")
             else None,
+            jersey=_parse_jersey(p.get("jersey"), f"{where}: {p.get('name', f'player {i + 1}')}"),
         )
         for i, p in enumerate(_require(data, "players", where))
     ]
