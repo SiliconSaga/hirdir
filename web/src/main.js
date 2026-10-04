@@ -368,7 +368,13 @@ bind({
       endGame();
       return;
     }
-    if (!team.roster.length && !log.size()) {
+    // "Nothing to reset" has to mean nothing is stored, not merely that the
+    // roster is empty: a document can carry a team name, a clock or an export
+    // marker on its own, and refusing to clear those leaves them behind.
+    // Not checked: onFieldTarget against its default. There is no way to move
+    // it without importing a roster, and pinning the default here would rot
+    // the day it changed.
+    if (!team.team && !team.roster.length && !log.size() && !now() && !exportedAt) {
       setRosterStatus("Nothing to reset — no team is loaded.");
       return;
     }
