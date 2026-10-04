@@ -125,6 +125,9 @@ export function render(view) {
     }),
   );
 
+  // The same button ends a game or, when none is running, clears the team out.
+  $("end-game").textContent = view.gameLive ? "End game" : "Reset everything";
+
   // Once the game is over nothing new gets recorded — but undo still works,
   // because ending it by mis-tap is exactly what needs taking back.
   $("undo").disabled = !view.canUndo;
@@ -189,7 +192,7 @@ export function bind(handlers) {
   $("pending-cancel").addEventListener("click", handlers.cancelSub);
   $("undo").addEventListener("click", handlers.undo);
   $("rollcall").addEventListener("click", handlers.rollCall);
-  $("end-game").addEventListener("click", handlers.endGame);
+  $("end-game").addEventListener("click", handlers.endOrReset);
   $("note-save").addEventListener("click", () => {
     const box = $("note-text");
     if (box.value.trim()) handlers.note(box.value.trim());
@@ -269,23 +272,33 @@ export function setRosterStatus(text) {
   $("roster-status").textContent = text;
 }
 
-// Same in-page dialog as the import confirm, for the same reason: a native
-// confirm can be suppressed in an installed app, and a suppressed one reads
-// as "no" with nothing on screen to say why.
-export function confirmNewGame(warning, onYes) {
-  const dialog = $("new-game-confirm");
-  $("new-game-warning").textContent = warning;
-  $("new-game-yes").onclick = () => {
+// In-page dialogs, not window.confirm, for the same reason the import one is:
+// an installed app can have native dialogs suppressed, and a suppressed
+// confirm reads as "no" with nothing on screen to say why.
+function confirmDanger(name, warning, onYes, declinedWith) {
+  const dialog = $(`${name}-confirm`);
+  $(`${name}-warning`).textContent = warning;
+  $(`${name}-yes`).onclick = () => {
     dialog.close();
     onYes();
   };
-  const declined = () => setRosterStatus("Kept the game you had.");
-  $("new-game-no").onclick = () => {
+  const declined = () => setRosterStatus(declinedWith);
+  $(`${name}-no`).onclick = () => {
     dialog.close();
     declined();
   };
+  // Escape, or a platform back gesture, closes it without either button —
+  // still a decline, and it should say so.
   dialog.oncancel = declined;
   dialog.showModal();
+}
+
+export function confirmNewGame(warning, onYes) {
+  confirmDanger("new-game", warning, onYes, "Kept the game you had.");
+}
+
+export function confirmReset(warning, onYes) {
+  confirmDanger("reset", warning, onYes, "Kept the team and the game.");
 }
 
 export function setImportStatus(text) {
