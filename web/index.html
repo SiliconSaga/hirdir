@@ -110,6 +110,15 @@
       </div>
     </dialog>
 
+    <dialog id="reset-confirm" aria-labelledby="reset-title">
+      <h2 id="reset-title" tabindex="-1">Clear the team as well?</h2>
+      <p id="reset-warning"></p>
+      <div class="row">
+        <button id="reset-yes" class="big primary">Reset everything</button>
+        <button id="reset-no" class="big">Keep it</button>
+      </div>
+    </dialog>
+
     <details id="setup">
       <summary>Setup and export</summary>
       <label for="import-file">Team config (the same JSON <code>hirdir build</code> reads) — loading one clears the current game</label>
@@ -134,7 +143,7 @@
       <button id="export" class="big">Export game</button>
       <button id="end-game" class="big">End game</button>
       <button id="new-game" class="big">New game</button>
-      <p class="hint">Export writes the record out. New game clears the minutes and keeps the team, for next week.</p>
+      <p class="hint">Export writes the record out. New game clears the minutes and keeps the team, for next week. Once no game is running, End game becomes Reset everything — the way to put a different team in.</p>
       <p class="hint">Everything stays on this phone. Nothing is sent anywhere.</p>
     </details>
   </body>

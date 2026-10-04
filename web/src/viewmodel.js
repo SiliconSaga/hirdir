@@ -65,5 +65,9 @@ export function buildView(
     pending,
     canUndo: logSize > 0,
     ended: state.ended,
+    // One button, two jobs, because they are never both available: during a
+    // game the only thing to do is end it; with no game running the useful
+    // thing is to clear the team out and start over with another.
+    gameLive: state.started && !state.ended,
   };
 }

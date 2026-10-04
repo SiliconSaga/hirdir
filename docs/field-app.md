@@ -20,6 +20,8 @@ It deliberately does not edit the live game rows. Those are buttons, they re-sor
 
 **New game** clears the log and the clock and keeps the roster, which is how next Saturday starts. It asks first, and warns unless what is on screen is exactly what was exported — clearing a game whose record is out of date is the one thing undo cannot take back. "Exactly" covers more than the events: an export carries the roster's names and numbers and the minutes the clock has run, so a rename after exporting, or simply leaving the clock running, makes the file on disk no longer the game in hand.
 
+**End game** turns into **Reset everything** once no game is running — before kickoff, or after the final whistle. That is the way back to an empty app: the roster, the numbers and anything recorded all go, and storage is cleared with them. One button rather than two, because the two jobs are never useful at the same moment, and a coach mid-match should not be one tap from clearing the team. It confirms first, and says so when the game it is about to discard was never exported.
+
 Jersey numbers are optional throughout. They show in the number slot on every row, ride along in the CSV's `Jersey` column, and can be carried in a config as `players[].jersey`.
 
 ## Where the data lives

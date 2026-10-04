@@ -91,6 +91,14 @@ test("the clock button follows the clock, not the game's lifecycle", () => {
   assert.equal(view(false).running, false); // paused mid-game must not read "Pause"
 });
 
+test("the end button is only for a game that is actually running", () => {
+  const view = (events) =>
+    buildView(fold(events, roster, 60), { clockSeconds: 60, onFieldTarget: 2, pendingSub: null });
+  assert.equal(view([]).gameLive, false); // before kickoff: nothing to end
+  assert.equal(view([ev(0, "game_start")]).gameLive, true);
+  assert.equal(view([ev(0, "game_start"), ev(50, "game_end")]).gameLive, false);
+});
+
 test("kids marked absent appear in an away list so they can come back", () => {
   const state = fold([ev(0, "game_start"), ev(10, "absent", { kid: "k3" })], roster, 60);
   const view = buildView(state, { clockSeconds: 60, onFieldTarget: 2, pendingSub: null });

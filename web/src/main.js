@@ -14,6 +14,7 @@ import {
   bind,
   confirmImport,
   confirmNewGame,
+  confirmReset,
   openRollCall,
   render,
   renderRoster,
@@ -186,6 +187,19 @@ function exportState() {
   return fingerprint({ events: log.events, roster: team.roster, elapsed: Math.round(now()) });
 }
 
+function endGame() {
+  const state = current();
+  if (!state.started || state.ended) return;
+  // Remember whether the clock was running, so undoing this does not restart a
+  // clock that was paused at halftime when the game ended.
+  append("game_end", { wasRunning: clock.isRunning() });
+  clock.pause();
+  releaseWakeLock();
+  pendingSub = null;
+  persist();
+  draw();
+}
+
 function exportGame() {
   const state = current();
   const csv = toCsv(state, now(), team.onFieldTarget);
@@ -345,17 +359,44 @@ bind({
       (on) => append("roll_call", { on }),
     );
   },
-  endGame() {
+  // One button: the final whistle while a game runs, and the way back to an
+  // empty app when none does. They are never both useful at once, and a coach
+  // mid-match should not be one tap from clearing the roster.
+  endOrReset() {
     const state = current();
-    if (!state.started || state.ended) return;
-    // Remember whether the clock was running, so undoing this does not
-    // restart a clock that was paused at halftime when the game ended.
-    append("game_end", { wasRunning: clock.isRunning() });
-    clock.pause();
-    releaseWakeLock();
-    pendingSub = null;
-    persist();
-    draw();
+    if (state.started && !state.ended) {
+      endGame();
+      return;
+    }
+    // "Nothing to reset" has to mean nothing is stored, not merely that the
+    // roster is empty: a document can carry a team name, a clock or an export
+    // marker on its own, and refusing to clear those leaves them behind.
+    // Not checked: onFieldTarget against its default. There is no way to move
+    // it without importing a roster, and pinning the default here would rot
+    // the day it changed.
+    if (!team.team && !team.roster.length && !log.size() && !now() && !exportedAt) {
+      setRosterStatus("Nothing to reset — no team is loaded.");
+      return;
+    }
+    confirmReset(
+      log.size() && exportState() !== exportedAt
+        ? "The team, the numbers and this game all go, and this game has changed since it was last exported, if it ever was. None of it can be got back."
+        : "The team, the numbers and anything recorded all go. The app goes back to empty, ready for another team.",
+      () => {
+        releaseWakeLock();
+        storage.clear();
+        team = { team: "", onFieldTarget: 4, roster: [], events: [], clock: null };
+        log = createLog([]);
+        clock = createClock(() => Date.now(), null);
+        pendingSub = null;
+        exportedAt = "";
+        persist();
+        draw();
+        renderRoster(team.roster);
+        setRosterStatus("");
+        setImportStatus("Reset. Load a team file, or add players above.");
+      },
+    );
   },
   exportGame,
   importConfig: (file) => loadTeam(async () => JSON.parse(await file.text())),
