@@ -2,11 +2,14 @@
 
 const $ = (id) => document.getElementById(id);
 
-function markButton(action, label, { set = null, aria = null } = {}) {
+function markButton(action, label, { set = null, aria = null, tappable = false } = {}) {
   const button = document.createElement("button");
   button.dataset.action = action;
   button.textContent = label;
   if (aria) button.setAttribute("aria-label", aria);
+  // Outlined without claiming a state: for marks that do something rather
+  // than toggle, which otherwise read as flat text on a phone.
+  if (tappable) button.classList.add("tappable");
   // Toggles announce their state; one-shot buttons (a goal) have none.
   if (set !== null) {
     button.classList.toggle("set", set);
@@ -60,7 +63,9 @@ function kidRow(kid, { onField }) {
   marks.append(
     onField
       ? markButton("goal", `⚽${kid.goals || ""}`, { aria: `Goal for ${kid.name}` })
-      : markButton("away", "away", { aria: `${kid.name} is not here today` }),
+      // Outlined like the toggles so it reads as something you tap, but with
+      // no aria-pressed: it is an action, not a state the kid is in.
+      : markButton("away", "away", { aria: `${kid.name} is not here today`, tappable: true }),
     markButton("star", "★", { set: kid.flags.includes("star"), aria: `Doing great: ${kid.name}` }),
     markButton("shy", "shy", { set: kid.flags.includes("shy"), aria: `Shy: ${kid.name}` }),
     markButton("help", "help", {
@@ -104,6 +109,7 @@ export function render(view) {
   $("clock").textContent = view.clock;
   $("clock-toggle").textContent = view.running ? "Pause" : "Start";
   $("count").textContent = view.countLabel;
+  $("count").setAttribute("aria-label", view.countSpoken);
   $("count").classList.toggle("warn", view.countWarning);
 
   paintList("on-field", view.onField, true);
@@ -150,7 +156,16 @@ export function openRollCall(view, onSave) {
   grid.replaceChildren(
     ...everyone.map((kid) => {
       const button = document.createElement("button");
-      button.textContent = kid.name;
+      // Number then name, as the row shows them: at a glance across a field
+      // the shirt is what you can actually read.
+      if (kid.jersey) {
+        const jersey = document.createElement("span");
+        jersey.className = "jersey";
+        jersey.textContent = kid.jersey;
+        button.append(jersey, document.createTextNode(kid.name));
+      } else {
+        button.textContent = kid.name;
+      }
       const paint = () => {
         button.classList.toggle("on", chosen.has(kid.id));
         button.setAttribute("aria-pressed", String(chosen.has(kid.id)));
@@ -198,6 +213,19 @@ export function bind(handlers) {
     if (box.value.trim()) handlers.note(box.value.trim());
     box.value = "";
   });
+  $("count").addEventListener("click", handlers.editTarget);
+  // Goals move while the panel is shut, and the editor is deliberately not on
+  // the clock — so it refreshes when the coach actually opens it.
+  $("setup").addEventListener("toggle", () => {
+    if ($("setup").open) handlers.refreshRoster();
+  });
+  $("target-cancel").addEventListener("click", () => $("target-dialog").close());
+  $("roster-edit").addEventListener("click", (event) => {
+    const button = event.target.closest("[data-row-action]");
+    const row = event.target.closest(".roster-row");
+    if (!button || !row) return;
+    handlers.rosterAction(row.dataset.kid, button.dataset.rowAction);
+  });
   // change, not input: it fires on blur or Enter, so a name is saved once when
   // the coach is done with it rather than on every keystroke.
   $("roster-edit").addEventListener("change", (event) => {
@@ -233,20 +261,72 @@ export function bind(handlers) {
 // The roster editor lives in Setup rather than over the game lists: those rows
 // are buttons, they re-sort by who is owed time, and the one-second repaint
 // would eat a half-typed name. Painted on demand, never on the clock.
-export function renderRoster(roster) {
+//
+// `goals` maps kid id → goals scored, so a goal tapped onto the wrong kid can
+// be taken back here rather than needing a fifth button on the field row.
+export function renderRoster(roster, goals = new Map()) {
   $("roster-edit").replaceChildren(
     ...roster.map((kid) => {
       const li = document.createElement("li");
-      li.className = "roster-row";
+      li.className = kid.removed ? "roster-row gone" : "roster-row";
       li.dataset.kid = kid.id;
       const jersey = field("jersey", kid.jersey ?? "");
       jersey.inputMode = "numeric";
       jersey.maxLength = 4;
-      li.append(jersey, field("name", kid.name));
+      const name = field("name", kid.name);
+      jersey.disabled = Boolean(kid.removed);
+      name.disabled = Boolean(kid.removed);
+      li.append(jersey, name);
+
+      // Only for a kid who has one to take back, so most rows stay bare.
+      const scored = goals.get(kid.id) ?? 0;
+      if (scored && !kid.removed) {
+        li.append(
+          rowButton("goal-undo", `⚽${scored}−`, `Take back a goal from ${kid.name}`),
+        );
+      }
+      li.append(
+        kid.removed
+          ? rowButton("restore", "restore", `Put ${kid.name} back on the team`)
+          : rowButton("remove", "✕", `Take ${kid.name} off the team`),
+      );
       relabel(li, kid.name);
       return li;
     }),
   );
+}
+
+function rowButton(action, label, aria) {
+  const button = document.createElement("button");
+  button.type = "button";
+  button.className = `row-action ${action}`;
+  button.dataset.rowAction = action;
+  button.textContent = label;
+  button.setAttribute("aria-label", aria);
+  return button;
+}
+
+// Nine sizes, one tap each: a stepper would be seven taps from 4 to 11, with
+// a mis-tap waiting at each end.
+export function openTargetPicker(current, onPick) {
+  const grid = $("target-grid");
+  const dialog = $("target-dialog");
+  grid.replaceChildren(
+    ...[3, 4, 5, 6, 7, 8, 9, 10, 11].map((size) => {
+      const button = document.createElement("button");
+      button.type = "button";
+      button.textContent = String(size);
+      button.setAttribute("aria-label", `${size} a side`);
+      button.classList.toggle("on", size === current);
+      button.setAttribute("aria-pressed", String(size === current));
+      button.addEventListener("click", () => {
+        dialog.close();
+        onPick(size);
+      });
+      return button;
+    }),
+  );
+  dialog.showModal();
 }
 
 // Both labels name the child, so both have to follow a rename — the editor is

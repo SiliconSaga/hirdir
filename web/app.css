@@ -59,14 +59,48 @@ header {
   line-height: 1;
 }
 
+/* A button, because the side size is editable — outlined so that reads. */
 #count {
   margin-left: auto;
+  min-height: 44px;
+  padding: 0 10px;
+  font: inherit;
   font-size: 1.5rem;
   font-weight: 700;
+  font-variant-numeric: tabular-nums;
   color: var(--muted);
+  background: var(--bg);
+  border: 2px solid var(--line);
+  border-radius: 10px;
 }
 
-#count.warn { color: var(--owed); }
+#count.warn { color: var(--owed); border-color: var(--owed); }
+
+#target-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+  margin: 12px 0;
+}
+
+#target-grid button {
+  min-height: 60px;
+  font-size: 1.5rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  color: var(--fg);
+  background: var(--bg);
+  border: 2px solid var(--line);
+  border-radius: 10px;
+}
+
+#target-grid button.on {
+  color: var(--on-green);
+  background: var(--green);
+  border-color: var(--green);
+}
+
+#target-dialog .big { width: 100%; }
 
 #help-open {
   min-width: 44px;
@@ -199,6 +233,14 @@ button:disabled { opacity: 0.4; }
   background: var(--bg);
 }
 
+/* Outlined, but not "set": a mark that does something rather than toggling.
+   Without it, "away" read as a label rather than a button. */
+.marks button.tappable {
+  border-color: var(--line);
+  border-style: dashed;
+  background: var(--bg);
+}
+
 #pending {
   border: 2px solid var(--green);
   border-radius: 10px;
@@ -290,6 +332,34 @@ summary { min-height: 44px; font-size: 1.1rem; padding: 10px 0; }
 }
 
 #setup .name-input { flex: 1; min-width: 0; }
+
+#setup .row-action {
+  flex: none;
+  min-width: 48px;
+  min-height: 48px;
+  padding: 0 8px;
+  font-size: 0.95rem;
+  color: var(--muted);
+  background: var(--bg);
+  border: 2px solid var(--line);
+  border-radius: 10px;
+}
+
+#setup .row-action.remove { font-size: 1.1rem; }
+#setup .row-action.restore { color: var(--green); border-color: var(--green); }
+
+/* Off the team, still on the page: this is where they come back from. */
+.roster-row.gone input {
+  color: var(--muted);
+  text-decoration: line-through;
+  background: var(--on-bg);
+}
+
+#rollcall-grid .jersey {
+  margin-right: 6px;
+  font-variant-numeric: tabular-nums;
+  opacity: 0.7;
+}
 
 .add-kid { align-items: stretch; margin-top: 12px; }
 .add-kid #add-jersey { flex: none; width: 4.5em; text-align: center; }

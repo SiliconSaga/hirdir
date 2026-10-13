@@ -32,6 +32,10 @@ export function buildView(
     // paused clock must not still read "Pause".
     running: clockRunning,
     countLabel: `${on.length}/${onFieldTarget}`,
+    // The button's own text is its accessible name, and "3/5" is read out as
+    // "three slash five" — so the name is set from this instead, and follows
+    // the numbers rather than freezing at whatever the markup said.
+    countSpoken: `${on.length} on, ${onFieldTarget} a side. Tap to change.`,
     countWarning: on.length !== onFieldTarget,
     onField: on.map((kid) => ({
       id: kid.id,

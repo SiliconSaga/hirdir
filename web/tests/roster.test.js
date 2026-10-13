@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { addKid, editKid, RosterError } from "../src/roster.js";
+import { addKid, editKid, removeKid, restoreKid, RosterError } from "../src/roster.js";
 
 const roster = [
   { id: "k1", name: "Ada", jersey: "1" },
@@ -60,4 +60,29 @@ test("editing a kid who is not on the roster changes nothing", () => {
 
 test("an edit that would leave a kid nameless is refused", () => {
   assert.throws(() => editKid(roster, "k1", { name: "" }), RosterError);
+});
+
+test("removing a kid marks them rather than dropping them", () => {
+  // The event log keys on ids. Splicing a kid out would leave their minutes
+  // pointing at nobody, and the next added kid could inherit the id.
+  const next = removeKid(roster, "k1");
+  assert.equal(next.length, roster.length);
+  assert.deepEqual(next[0], { id: "k1", name: "Ada", jersey: "1", removed: true });
+  assert.equal(next[1].removed, undefined);
+});
+
+test("restoring a kid brings back everything they had", () => {
+  const next = restoreKid(removeKid(roster, "k1"), "k1");
+  assert.deepEqual(next, roster);
+});
+
+test("removing or restoring someone not on the roster changes nothing", () => {
+  assert.deepEqual(removeKid(roster, "k99"), roster);
+  assert.deepEqual(restoreKid(roster, "k99"), roster);
+});
+
+test("a removed kid can still be renamed, and stays removed", () => {
+  const next = editKid(removeKid(roster, "k2"), "k2", { name: "Bjorn S." });
+  assert.equal(next[1].name, "Bjorn S.");
+  assert.equal(next[1].removed, true);
 });
