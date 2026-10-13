@@ -30,5 +30,6 @@ Everything stays on your phone. There is no account, and nothing about the kids 
 | [`docs/workbook.md`](docs/workbook.md) | The printable workbook: generating one, the config format, and how to fill it in during a game |
 | [`docs/development.md`](docs/development.md) | Running it as a developer: setup, tests, deploy, and the traps |
 | [`docs/roadmap.md`](docs/roadmap.md) | Why this exists, the phases, and what's next |
+| [`CHANGELOG.md`](CHANGELOG.md) | What changed in each release, newest first |
 
 **Team data never enters this repo.** Rosters name children; the only one committed here is [`examples/example-team.json`](examples/example-team.json), whose names are invented. Real configs and workbooks live in `local/`, which is gitignored. Details in [`docs/development.md`](docs/development.md#team-data-never-enters-this-repo).

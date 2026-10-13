@@ -53,6 +53,28 @@ The JavaScript side tests the pure modules — the event fold, the selectors, th
 
 `web/tests/shell.test.js` covers the half a machine can check: every module in `web/src/` appears in the worker's `SHELL` list, everything `index.html` references is cached, and the cache name still carries a version. **No test can check whether a human remembered to change the number.** The durable fix is a build step deriving the name from a content hash — owed, and waiting until the app grows another reason to build.
 
+## Releases
+
+Both halves of the repo version together under [SemVer](https://semver.org/), tagged `vX.Y.Z`, with [`CHANGELOG.md`](../CHANGELOG.md) in [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) form — the same scheme the yggdrasil workspace uses, so the two read alike. One number covers the app and the generator: a clone at a tag is what a coach actually had that weekend.
+
+| Bump | Meaning here |
+|---|---|
+| **Major** | A coach has to do something differently, or a team file or a game stored in a browser no longer loads |
+| **Minor** | New capability in the app or the workbook, backwards compatible |
+| **Patch** | Fixes, docs, copy — nothing new to learn |
+
+**The changelog is curated, not generated.** An entry says what changed *for a coach*; the commit log already says what the diff did, and the provider renders it beside the release. `[Unreleased]` accumulates entries and becomes the version's section at tag time.
+
+Cutting one:
+
+1. `ws test hirdir` green on main — and the app opened in a real browser, since the suites deliberately do not cover `main.js`.
+2. Rename `[Unreleased]` to `## [X.Y.Z] - YYYY-MM-DD`, add a fresh empty `[Unreleased]` above it, and update the link references at the bottom.
+3. Bump `version` in `pyproject.toml` and `__version__` in `src/hirdir/__init__.py`.
+4. `ws commit`, then `git tag -a vX.Y.Z` and `ws push hirdir vX.Y.Z`.
+5. Create the GitHub Release from the tag, pasting that changelog section as the body.
+
+**The service worker's cache version is not this version** and does not follow it — it tracks the shell, which changes on its own cadence (see Deploy above). Conflating the two would either leave a stale app installed or invalidate every phone's cache for a docs release.
+
 ## Team data never enters this repo
 
 Rosters name children. This is the rule that outranks the rest.

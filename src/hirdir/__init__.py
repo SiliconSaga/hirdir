@@ -8,4 +8,4 @@ from .config import TeamConfig, load
 from .workbook import build, write
 
 __all__ = ["TeamConfig", "build", "load", "write"]
-__version__ = "0.1.0"
+__version__ = "1.1.0"
