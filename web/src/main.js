@@ -7,7 +7,7 @@ import { proposeSubOff } from "./selectors.js";
 import { buildView } from "./viewmodel.js";
 import { browserBacking, createStorage } from "./storage.js";
 import { importTeam } from "./importer.js";
-import { addKid, editKid } from "./roster.js";
+import { addKid, editKid, removeKid, restoreKid } from "./roster.js";
 import { EXAMPLE_TEAM } from "./example-team.js";
 import { toCsv, toJson } from "./exporter.js";
 import {
@@ -16,6 +16,7 @@ import {
   confirmNewGame,
   confirmReset,
   openRollCall,
+  openTargetPicker,
   render,
   renderRoster,
   setImportStatus,
@@ -46,7 +47,22 @@ let exportedAt = team.exportedAt ?? "";
 if (!team.roster.length) document.getElementById("setup").open = true;
 
 const now = () => clock.elapsed();
-const current = () => fold(log.events, team.roster, now());
+// Removed kids are filtered out once, here, so nothing downstream has to know
+// about them: they leave the lists, the fair-share divisor and the CSV, while
+// their events stay in the log and the JSON export for a restore to find.
+const playing = () => team.roster.filter((kid) => !kid.removed);
+const current = () => fold(log.events, playing(), now());
+// The editor shows everyone, removed included, since that is where they come
+// back from — and it needs the goal tallies to offer taking one back.
+const paintRoster = () => renderRoster(team.roster, goalsById());
+
+const nameOf = (id) => team.roster.find((kid) => kid.id === id)?.name ?? "that player";
+
+function goalsById() {
+  const tally = new Map();
+  for (const kid of current().kids.values()) if (kid.goals) tally.set(kid.id, kid.goals);
+  return tally;
+}
 
 function persist() {
   team = { ...team, clock: clock.state(), exportedAt };
@@ -165,7 +181,7 @@ function loadTeam(readConfig) {
       exportedAt = "";
       persist();
       draw();
-      renderRoster(team.roster);
+      paintRoster();
       // Say so: a picker that closes with nothing visibly different is
       // indistinguishable from a failure.
       setImportStatus(`Loaded ${parsed.team} — ${parsed.roster.length} players.`);
@@ -241,7 +257,7 @@ bind({
     try {
       team = { ...team, roster: addKid(team.roster, { name, jersey }) };
       persist();
-      renderRoster(team.roster);
+      paintRoster();
       draw();
       setRosterStatus(`Added ${team.roster.at(-1).name}.`);
       return true;
@@ -249,6 +265,37 @@ bind({
       setRosterStatus(error.message);
       return false;
     }
+  },
+  // Removing and restoring are team edits like a rename; taking back a goal is
+  // an event, because it is a fact about the game rather than about the squad.
+  rosterAction(id, action) {
+    if (action === "remove") {
+      team = { ...team, roster: removeKid(team.roster, id) };
+      pendingSub = null; // they may have been half of a proposed swap
+      persist();
+      paintRoster();
+      draw();
+      setRosterStatus(`Took ${nameOf(id)} off the team — restore is where the ✕ was.`);
+    } else if (action === "restore") {
+      team = { ...team, roster: restoreKid(team.roster, id) };
+      persist();
+      paintRoster();
+      draw();
+      setRosterStatus(`${nameOf(id)} is back, with whatever they had played.`);
+    } else if (action === "goal-undo") {
+      append("goal_undo", { kid: id });
+      paintRoster();
+      setRosterStatus(`Took a goal back from ${nameOf(id)}.`);
+    }
+  },
+  refreshRoster: () => paintRoster(),
+  editTarget() {
+    openTargetPicker(team.onFieldTarget, (size) => {
+      team = { ...team, onFieldTarget: size };
+      persist();
+      draw();
+      setRosterStatus(`Playing ${size} a side.`);
+    });
   },
   editKid(id, change, value) {
     try {
@@ -259,7 +306,7 @@ bind({
       return team.roster.find((kid) => kid.id === id)?.[change] ?? "";
     } catch (error) {
       setRosterStatus(error.message);
-      renderRoster(team.roster); // refused: put back what is actually stored
+      paintRoster(); // refused: put back what is actually stored
       return undefined;
     }
   },
@@ -392,7 +439,7 @@ bind({
         exportedAt = "";
         persist();
         draw();
-        renderRoster(team.roster);
+        paintRoster();
         setRosterStatus("");
         setImportStatus("Reset. Load a team file, or add players above.");
       },
@@ -449,7 +496,7 @@ if (clock.isRunning() && !current().ended) requestWakeLock();
 
 setInterval(draw, 1000);
 draw();
-renderRoster(team.roster); // once: the editor is repainted only when it changes
+paintRoster(); // once: the editor is repainted only when it changes
 
 if ("serviceWorker" in navigator && location.protocol.startsWith("http")) {
   navigator.serviceWorker.register("sw.js").catch(() => {

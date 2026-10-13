@@ -67,6 +67,11 @@ export function fold(events, roster, nowT) {
       case "goal":
         if (kid) kid.goals += 1;
         break;
+      // A goal tapped onto the wrong kid, taken back later. An event rather
+      // than an edit to the tally, so undo reaches it like anything else.
+      case "goal_undo":
+        if (kid) kid.goals = Math.max(0, kid.goals - 1);
+        break;
       case "flag":
         if (kid) {
           if (kid.flags.has(event.flag)) kid.flags.delete(event.flag);

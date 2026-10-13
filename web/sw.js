@@ -4,10 +4,11 @@
 // github.io serves every repo's Pages site from one origin, so only ever
 // delete caches this app owns.
 const CACHE_PREFIX = "hirdir-";
-// v3: a new roster.js module, imported by both main.js and importer.js.
-// Without a bump, an installed app can mix a refreshed main.js with a cached
-// module that lacks the exports it now imports, and then fails to start at all.
-const CACHE = `${CACHE_PREFIX}v3`;
+// v4: main.js imports removeKid/restoreKid from roster.js and openTargetPicker
+// from ui.js. Without a bump, an installed app can mix a refreshed main.js
+// with a cached module that lacks the exports it now imports, and then fails
+// to start at all.
+const CACHE = `${CACHE_PREFIX}v4`;
 const SHELL = [
   ".",
   "index.html",

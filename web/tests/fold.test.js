@@ -112,6 +112,29 @@ test("present undoes absent", () => {
   assert.equal(state.kids.get("k1").present, true);
 });
 
+test("a goal put on the wrong kid can be taken back, long after the fact", () => {
+  // An event, not an edit to the tally: the log stays append-only, so undo
+  // reaches the correction and the record shows what actually happened.
+  const state = fold(
+    [
+      ev(0, "game_start"),
+      ev(30, "goal", { kid: "k2" }),
+      ev(40, "goal", { kid: "k2" }),
+      ev(300, "goal_undo", { kid: "k2" }),
+      ev(310, "goal", { kid: "k1" }),
+    ],
+    roster,
+    400,
+  );
+  assert.equal(state.kids.get("k2").goals, 1);
+  assert.equal(state.kids.get("k1").goals, 1);
+});
+
+test("taking back a goal nobody scored is ignored rather than going negative", () => {
+  const state = fold([ev(0, "game_start"), ev(30, "goal_undo", { kid: "k2" })], roster, 60);
+  assert.equal(state.kids.get("k2").goals, 0);
+});
+
 test("goals accumulate and flags toggle", () => {
   const state = fold(
     [

@@ -6,7 +6,7 @@ The guide behind the `?` button in the app is the canonical how-to for using it 
 
 ## What it records
 
-An append-only event log: kickoff, each sub in and out, goals, ★/shy/needs-help flags, absences, roll calls, notes, and the final whistle. Each event carries the clock time it happened at. Everything on screen — minutes played, current stint, who is owed time — is derived from that log by replaying it, which is why **Undo** can simply drop the last action (a substitution included — it goes back as one) and have every number follow.
+An append-only event log: kickoff, each sub in and out, goals and goals taken back, ★/shy/needs-help flags, absences, roll calls, notes, and the final whistle. Each event carries the clock time it happened at. Everything on screen — minutes played, current stint, who is owed time — is derived from that log by replaying it, which is why **Undo** can simply drop the last action (a substitution included — it goes back as one) and have every number follow.
 
 The clock is anchored to wall time, so the game keeps running while the screen is off or the app is closed.
 
@@ -14,9 +14,16 @@ The clock is anchored to wall time, so the game keeps running while the screen i
 
 Both live in *Setup and export*, away from the game lists.
 
+**The side size** is the count in the top corner — tap it and pick anything from 3 to 11. It feeds the fair share, so changing it mid-game re-reckons the whole game at the new number rather than splitting it into periods; the dialog says so. A per-period model would need the target to become an event the fold integrates over, which is a bigger change than a coach switching from 5v5 to 4v4 at halftime warrants today.
+
 **The roster panel** lists the team in lineup order, each row a jersey number and a name, with an *Add* row at the bottom. A coach with no config file builds the team here; one with a file can still fix a spelling or set a number the bag turned out to use. Edits save when the field loses focus, and ids never move — renaming a child mid-game leaves their minutes exactly where they were.
 
-It deliberately does not edit the live game rows. Those are buttons, they re-sort by who is owed time, and the one-second repaint would eat a half-typed name.
+It deliberately does not edit the live game rows. Those are buttons, they re-sort by who is owed time, and the one-second repaint would eat a half-typed name. It refreshes when the panel is opened, which is how a goal scored while it was shut shows up there.
+
+Two corrections live on those rows:
+
+- **✕ takes a player off the team**, and a **restore** appears where the ✕ was. It is a mark, not a deletion: ids never move, so a restored player walks back into their own minutes. A removed player leaves both lists, the away list and the fair-share divisor, and drops out of the CSV — while their events stay in the log and in the JSON export, which is the whole document. That also means no confirm dialog: reversibility is the confirmation.
+- **⚽2−** appears beside anyone with a goal, for one tapped onto the wrong kid. It records a `goal_undo` event rather than editing the tally, so the log stays append-only, **Undo** reaches it like anything else, and the record shows what actually happened. Taking back a goal nobody scored does nothing rather than going negative.
 
 **New game** clears the log and the clock and keeps the roster, which is how next Saturday starts. It asks first, and warns unless what is on screen is exactly what was exported — clearing a game whose record is out of date is the one thing undo cannot take back. "Exactly" covers more than the events: an export carries the roster's names and numbers and the minutes the clock has run, so a rename after exporting, or simply leaving the clock running, makes the file on disk no longer the game in hand.
 
@@ -51,6 +58,19 @@ Two things follow that surprise people:
 - **A kid who refuses to play still counts.** Marking them *away* takes them out of the divisor; leaving them in keeps the time they're owed on the books for next week. The cost is that it lowers everyone else's share too, so in a game carried by two or three willing kids those kids read as overplayed. [Issue #6](https://github.com/SiliconSaga/hirdir/issues/6) is about recording a declined shift so both can be true at once.
 
 The bench is sorted by who is owed the most, and shows an "owed N" figure only once a kid is a full minute behind — below that the number churned every few seconds and read as a bug.
+
+## What the marks mean
+
+The `?` guide carries these, since a coach meets them on the row before they meet any documentation:
+
+| Mark | Means |
+|---|---|
+| ★ | Doing great — spend your attention elsewhere. |
+| shy | Hard to get onto the field and hard to keep there. Wants encouragement, not coaching. |
+| help | A skill or behaviour problem — not keeping up, or shoving and the like. Wants your attention and something to work on. |
+| away | Not here today. An action, not a toggle: it moves them to "Away today", out of the fair-share maths, and a tap there brings them back. |
+
+★, shy and help toggle; away does something, so it carries no `aria-pressed` and is outlined dashed rather than solid. Before that it read as a label rather than a button.
 
 ## Offline, and deploys
 

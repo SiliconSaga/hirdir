@@ -39,6 +39,23 @@ export function addKid(roster, { name, jersey = null } = {}) {
   return [...roster, { id: nextId(roster), name: nameOf(name), jersey: jerseyOf(jersey) }];
 }
 
+// Removing is a mark, not a splice. The event log keys on ids, so cutting a
+// kid out would leave their minutes pointing at nobody — and the next kid
+// added could be handed the same id and inherit them. Marked instead: they
+// leave every list and the fair-share divisor, and restore brings back the
+// name, the number and whatever they played.
+export function removeKid(roster, id) {
+  return roster.map((kid) => (kid.id === id ? { ...kid, removed: true } : kid));
+}
+
+export function restoreKid(roster, id) {
+  return roster.map((kid) => {
+    if (kid.id !== id) return kid;
+    const { removed, ...rest } = kid;
+    return rest;
+  });
+}
+
 // Only the fields named in `changes` move, so setting a jersey cannot quietly
 // blank a name typed in the next field along.
 export function editKid(roster, id, changes = {}) {
