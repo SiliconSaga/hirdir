@@ -274,7 +274,9 @@ bind({
       // they are gone, but a restore replays the whole log — so a sub_in with
       // no sub_out would accrue straight through the time they were off the
       // team, and put them back on the field besides.
-      if (current().kids.get(id)?.onField) append("sub_out", { kid: id });
+      // Tagged, so undo can tell this closure from one the coach made and
+      // refuse to strip it while the player is still off the team.
+      if (current().kids.get(id)?.onField) append("sub_out", { kid: id, closedBy: "removed" });
       team = { ...team, roster: removeKid(team.roster, id) };
       pendingSub = null; // they may have been half of a proposed swap
       persist();
@@ -384,6 +386,17 @@ bind({
   // removes: taking back the kickoff must not leave time accruing, and taking
   // back the final whistle reopens the game.
   undo() {
+    // Removal is team config, not an event — it has to outlive New game, which
+    // clears the log — so undo cannot take it back. What it must not do is
+    // strip the stint closure out from under it: that would leave an unmatched
+    // sub_in for someone off the team, and a later restore would replay it.
+    const last = log.events.at(-1);
+    if (last?.closedBy === "removed" && team.roster.find((kid) => kid.id === last.kid)?.removed) {
+      setRosterStatus(
+        `That would reopen ${nameOf(last.kid)}'s time on the field while they are off the team. Restore them first.`,
+      );
+      return;
+    }
     const removed = log.undo();
     const ending = removed.find((event) => event.type === "game_end");
     if (removed.some((event) => event.type === "game_start")) {
