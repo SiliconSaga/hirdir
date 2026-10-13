@@ -18,7 +18,7 @@ Both live in *Setup and export*, away from the game lists.
 
 **The roster panel** lists the team in lineup order, each row a jersey number and a name, with an *Add* row at the bottom. A coach with no config file builds the team here; one with a file can still fix a spelling or set a number the bag turned out to use. Edits save when the field loses focus, and ids never move — renaming a child mid-game leaves their minutes exactly where they were.
 
-It deliberately does not edit the live game rows. Those are buttons, they re-sort by who is owed time, and the one-second repaint would eat a half-typed name. It refreshes when the panel is opened, which is how a goal scored while it was shut shows up there.
+It deliberately does not edit the live game rows. Those are buttons, they re-sort by who is owed time, and the one-second repaint would eat a half-typed name — so the panel is repainted when something it shows has changed rather than on the clock. A goal is one of those things: the take-back button below appears as the goal is tapped, whether the panel was already open or is opened later.
 
 Two corrections live on those rows:
 

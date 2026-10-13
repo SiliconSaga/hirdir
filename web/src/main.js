@@ -52,16 +52,25 @@ const now = () => clock.elapsed();
 // their events stay in the log and the JSON export for a restore to find.
 const playing = () => team.roster.filter((kid) => !kid.removed);
 const current = () => fold(log.events, playing(), now());
-// The editor shows everyone, removed included, since that is where they come
-// back from — and it needs the goal tallies to offer taking one back.
-const paintRoster = () => renderRoster(team.roster, goalsById());
-
 const nameOf = (id) => team.roster.find((kid) => kid.id === id)?.name ?? "that player";
 
-function goalsById() {
+function goalsOf(state) {
   const tally = new Map();
-  for (const kid of current().kids.values()) if (kid.goals) tally.set(kid.id, kid.goals);
+  for (const kid of state.kids.values()) if (kid.goals) tally.set(kid.id, kid.goals);
   return tally;
+}
+
+// What the editor is showing, so the tick can tell whether its take-back
+// buttons have fallen behind the game without repainting to find out.
+const goalStamp = (goals) => [...goals].map(([id, n]) => `${id}:${n}`).join(",");
+let paintedGoals = null;
+
+// The editor shows everyone, removed included, since that is where they come
+// back from — and it needs the goal tallies to offer taking one back.
+function paintRoster(state = current()) {
+  const goals = goalsOf(state);
+  paintedGoals = goalStamp(goals);
+  renderRoster(team.roster, goals);
 }
 
 function persist() {
@@ -70,8 +79,9 @@ function persist() {
 }
 
 function draw() {
+  const state = current();
   render(
-    buildView(current(), {
+    buildView(state, {
       clockSeconds: now(),
       onFieldTarget: team.onFieldTarget,
       pendingSub,
@@ -79,6 +89,14 @@ function draw() {
       clockRunning: clock.isRunning(),
     }),
   );
+  // The editor is still painted on demand rather than on the clock — it holds
+  // live inputs, and a repaint would take the focus and a half-typed name with
+  // it. But the take-back buttons it carries belong to the game, so a moved
+  // tally has to reach it: a goal tapped on a field row with the panel already
+  // open left no ⚽− until it was collapsed and opened again. Goals only move
+  // on a tap, so this stays off the per-second path — and a tap on a field row
+  // has already blurred, and so saved, anything being typed here.
+  if (goalStamp(goalsOf(state)) !== paintedGoals) paintRoster(state);
 }
 
 function append(type, fields = {}, group = null) {
@@ -291,7 +309,6 @@ bind({
       setRosterStatus(`${nameOf(id)} is back, with whatever they had played.`);
     } else if (action === "goal-undo") {
       append("goal_undo", { kid: id });
-      paintRoster();
       setRosterStatus(`Took a goal back from ${nameOf(id)}.`);
     }
   },
@@ -514,7 +531,7 @@ if (clock.isRunning() && !current().ended) requestWakeLock();
 
 setInterval(draw, 1000);
 draw();
-paintRoster(); // once: the editor is repainted only when it changes
+paintRoster(); // once at startup; after that, only when what it shows changes
 
 if ("serviceWorker" in navigator && location.protocol.startsWith("http")) {
   navigator.serviceWorker.register("sw.js").catch(() => {

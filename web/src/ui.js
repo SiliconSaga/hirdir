@@ -214,8 +214,9 @@ export function bind(handlers) {
     box.value = "";
   });
   $("count").addEventListener("click", handlers.editTarget);
-  // Goals move while the panel is shut, and the editor is deliberately not on
-  // the clock — so it refreshes when the coach actually opens it.
+  // A safety net rather than the only path: a moved goal tally reaches the
+  // editor as it happens, open or shut. Opening the panel is still the cheapest
+  // moment to catch it up on anything else that changed while it was away.
   $("setup").addEventListener("toggle", () => {
     if ($("setup").open) handlers.refreshRoster();
   });
@@ -260,7 +261,8 @@ export function bind(handlers) {
 
 // The roster editor lives in Setup rather than over the game lists: those rows
 // are buttons, they re-sort by who is owed time, and the one-second repaint
-// would eat a half-typed name. Painted on demand, never on the clock.
+// would eat a half-typed name. Painted when something it shows has actually
+// changed, which the clock ticking is not.
 //
 // `goals` maps kid id → goals scored, so a goal tapped onto the wrong kid can
 // be taken back here rather than needing a fifth button on the field row.
