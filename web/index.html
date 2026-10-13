@@ -13,7 +13,9 @@
     <header>
       <div id="clock">0:00</div>
       <button id="clock-toggle" class="big">Start</button>
-      <button id="count" aria-live="polite" aria-label="Players on, and how many you play. Tap to change.">0/4</button>
+      <!-- The accessible name is set from the view model on every render, so
+           it carries the live numbers rather than freezing at this markup. -->
+      <button type="button" id="count" aria-live="polite">0/4</button>
       <button id="help-open" aria-label="How this works">?</button>
     </header>
 

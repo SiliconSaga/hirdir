@@ -25,6 +25,13 @@ test("the on-field list shows each kid's current stint", () => {
   assert.equal(view.clock, "4:00");
 });
 
+test("the count speaks its numbers, since 3/5 reads as 'three slash five'", () => {
+  const state = fold([ev(0, "game_start"), ev(0, "sub_in", { kid: "k1" })], roster, 60);
+  const view = buildView(state, { clockSeconds: 60, onFieldTarget: 5, pendingSub: null });
+  assert.equal(view.countLabel, "1/5");
+  assert.equal(view.countSpoken, "1 on, 5 a side. Tap to change.");
+});
+
 test("the count warns when more kids are on than the target", () => {
   const state = fold(
     [ev(0, "game_start"), ev(0, "sub_in", { kid: "k1" }), ev(0, "sub_in", { kid: "k2" })],

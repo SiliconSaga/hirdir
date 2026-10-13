@@ -270,6 +270,11 @@ bind({
   // an event, because it is a fact about the game rather than about the squad.
   rosterAction(id, action) {
     if (action === "remove") {
+      // Close an open stint first. A removed kid's events are skipped while
+      // they are gone, but a restore replays the whole log — so a sub_in with
+      // no sub_out would accrue straight through the time they were off the
+      // team, and put them back on the field besides.
+      if (current().kids.get(id)?.onField) append("sub_out", { kid: id });
       team = { ...team, roster: removeKid(team.roster, id) };
       pendingSub = null; // they may have been half of a proposed swap
       persist();

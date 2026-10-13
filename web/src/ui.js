@@ -109,6 +109,7 @@ export function render(view) {
   $("clock").textContent = view.clock;
   $("clock-toggle").textContent = view.running ? "Pause" : "Start";
   $("count").textContent = view.countLabel;
+  $("count").setAttribute("aria-label", view.countSpoken);
   $("count").classList.toggle("warn", view.countWarning);
 
   paintList("on-field", view.onField, true);
